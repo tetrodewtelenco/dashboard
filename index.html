@@ -1866,7 +1866,7 @@ const TEAM_CONFIG = {
 // anders is dan de versie die nu draait. Als ja → toast + automatische reload.
 // Wijzig dit getal naar bv. '20260501-1' bij elke deploy om iedereen automatisch
 // te laten updaten zonder Ctrl+F5.
-const APP_VERSION = '20260430-5';
+const APP_VERSION = '20260430-6';
 const VERSION_CHECK_INTERVAL_MS = 2 * 60 * 1000; // elke 2 minuten checken
 // ============================================================
 
@@ -2140,6 +2140,10 @@ const FIELD_MAP = {
   omzet: {
     exact: ['OMZET?','OMZET','REVENUE','BEDRAG','COMMISSIE'],
     contains: ['OMZET','REVENUE','COMMISSIE']
+  },
+  postcode: {
+    exact: ['POSTCODE','PC','ZIP','POSTAL CODE','POSTNUMMER'],
+    contains: ['POSTCODE','POSTNUMMER']
   }
 };
 
@@ -2543,6 +2547,16 @@ function arrToRecords(arr, headerRowIdx, map){
     // Telenet is GO if: TELENET GO? = "GO"
     const telenetGo = parseGo(telenetRaw);
 
+    // Region: prefer direct postcode column on the row (most reliable),
+    // fall back to leads-tab lookup if not provided.
+    const directPostcode = get('postcode');
+    let region = null;
+    if(directPostcode != null && String(directPostcode).trim() !== ''){
+      const pcStr = String(directPostcode).trim().replace(/\D/g,'').slice(0,4);  // strip non-digits, take 4 digits
+      if(pcStr) region = POSTCODE_TO_REGION[pcStr] || null;
+    }
+    if(!region) region = lookupRegion(klant);
+
     records.push({
       date,
       ingepland: parseDate(get('ingepland')),
@@ -2555,7 +2569,7 @@ function arrToRecords(arr, headerRowIdx, map){
       energie: energieGo,
       telenet: telenetGo,
       omzet: parseRevenue(get('omzet')),
-      region: lookupRegion(klant)
+      region
     });
   }
   return records;
