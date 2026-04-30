@@ -2701,13 +2701,19 @@ function renderTimeChart(){
 // "Doorgegaan" = afspraak vond effectief plaats (geen closed door, cancel, overmacht, verwijderd, pending).
 // NaN/lege status telt als doorgegaan (default optimistisch — afspraak staat nog open).
 function isDoorgegaan(status){
-  if(!status) return true;
+  // Een afspraak geldt enkel als "doorgegaan" als hij effectief plaatsvond.
+  // Lege status telt NIET meer als doorgegaan — we weten niet of hij is doorgegaan.
+  // Enkel een POSITIEVE status (GO, NO GO) bevestigt dat de afspraak heeft plaatsgevonden.
+  if(!status) return false;
   const u = String(status).trim().toUpperCase();
+  if(!u) return false;
+  // Negatieve statussen — afspraak ging NIET door
   if(u.includes('CLOSED')) return false;
   if(u === 'CANCEL') return false;
   if(u === 'OVERMACHT') return false;
   if(u.includes('VERWIJDERD')) return false;
   if(u === 'PENDING') return false;
+  // Alles anders (GO, NO GO, en eventuele andere positieve waarden) telt als doorgegaan
   return true;
 }
 
