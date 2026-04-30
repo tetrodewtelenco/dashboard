@@ -1855,7 +1855,7 @@ const TEAM_CONFIG = {
 // anders is dan de versie die nu draait. Als ja → toast + automatische reload.
 // Wijzig dit getal naar bv. '20260501-1' bij elke deploy om iedereen automatisch
 // te laten updaten zonder Ctrl+F5.
-const APP_VERSION = '20260430-1';
+const APP_VERSION = '20260430-2';
 const VERSION_CHECK_INTERVAL_MS = 2 * 60 * 1000; // elke 2 minuten checken
 // ============================================================
 
@@ -1982,6 +1982,24 @@ function startOfWeek(d){
 }
 function startOfMonth(d){const x=new Date(d);x.setDate(1);x.setHours(0,0,0,0);return x}
 function startOfQuarter(d){const x=new Date(d);const m=Math.floor(x.getMonth()/3)*3;x.setMonth(m);x.setDate(1);x.setHours(0,0,0,0);return x}
+// Eind-van-periode helpers — zo kunnen presets ook toekomstige dagen tot het einde van de periode meenemen
+function endOfWeek(d){
+  const x = startOfWeek(d);
+  x.setDate(x.getDate() + 6);  // zondag van die week
+  x.setHours(23,59,59,999);
+  return x;
+}
+function endOfMonth(d){
+  const x = new Date(d.getFullYear(), d.getMonth() + 1, 0);  // dag 0 van volgende maand = laatste dag deze maand
+  x.setHours(23,59,59,999);
+  return x;
+}
+function endOfQuarter(d){
+  const m = Math.floor(d.getMonth()/3)*3;
+  const x = new Date(d.getFullYear(), m + 3, 0);  // laatste dag van de 3e maand van het kwartaal
+  x.setHours(23,59,59,999);
+  return x;
+}
 
 // ---------- VALUE PARSERS ----------
 function parseGo(v){
@@ -2514,9 +2532,12 @@ function applyPreset(preset){
   });
   const now = new Date();
   let from, to;
-  if(preset === 'week'){from = startOfWeek(now); to = new Date(); to.setHours(23,59,59,999);}
-  else if(preset === 'month'){from = startOfMonth(now); to = new Date(); to.setHours(23,59,59,999);}
-  else if(preset === 'quarter'){from = startOfQuarter(now); to = new Date(); to.setHours(23,59,59,999);}
+  // Periodes dekken de VOLLEDIGE periode (incl. toekomstige dagen) zodat de evolutie-grafiek
+  // vooruit kan kijken naar wat er nog ingepland staat. KPI's blijven correct want lege/geen-status
+  // afspraken tellen toch niet als doorgegaan.
+  if(preset === 'week'){from = startOfWeek(now); to = endOfWeek(now);}
+  else if(preset === 'month'){from = startOfMonth(now); to = endOfMonth(now);}
+  else if(preset === 'quarter'){from = startOfQuarter(now); to = endOfQuarter(now);}
   else {
     const dates = STATE.raw.map(r => r.date).filter(Boolean).sort((a,b)=>a-b);
     if(dates.length){from = dates[0]; to = dates[dates.length-1];}
