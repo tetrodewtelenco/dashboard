@@ -1866,7 +1866,7 @@ const TEAM_CONFIG = {
 // anders is dan de versie die nu draait. Als ja → toast + automatische reload.
 // Wijzig dit getal naar bv. '20260501-1' bij elke deploy om iedereen automatisch
 // te laten updaten zonder Ctrl+F5.
-const APP_VERSION = '20260430-4';
+const APP_VERSION = '20260430-5';
 const VERSION_CHECK_INTERVAL_MS = 2 * 60 * 1000; // elke 2 minuten checken
 // ============================================================
 
@@ -2065,12 +2065,26 @@ const REGION_LAYOUT = {
   'OostLimburg':     {col: 6, row: 1, label: 'Oost Limburg'}
 };
 
-// Lookup: klant-name (uppercase) → postcode (filled at file load via the leads-tabbladen).
+// Lookup: klant-name (genormaliseerd) → postcode.
+// Beide sleutels (in de lookup en bij het zoeken) worden door dezelfde normalize() gehaald
+// zodat verschillen in spaties, hoofdletters, BV/NV/BVBA suffix, accenten, ... niet uitmaken.
 const KLANT_TO_POSTCODE = {};
+
+function normalizeKlantName(s){
+  if(!s) return '';
+  return String(s)
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')  // strip accenten (é→e)
+    .replace(/[^\w\s]/g, ' ')                           // punten, komma's, leestekens → spatie
+    .replace(/\b(bvba|bv|nv|cv|comm\.v|comm v|vof|sa|sprl|gcv)\b/g, '')  // bedrijfsvormen weg
+    .replace(/\s+/g, ' ')                               // dubbele spaties → één
+    .trim();
+}
 
 function lookupRegion(klant){
   if(!klant) return null;
-  const key = String(klant).toUpperCase().trim();
+  const key = normalizeKlantName(klant);
+  if(!key) return null;
   const pc = KLANT_TO_POSTCODE[key];
   if(!pc) return null;
   return POSTCODE_TO_REGION[String(pc)] || null;
@@ -2165,9 +2179,13 @@ const CORS_PROXIES = [
 
 async function fetchSheetXlsx(){
   // Probeer eerst direct, dan via proxies. Stop bij eerste succes.
+  // Cache-buster: voeg een unieke querystring toe zodat proxies en CDN's verse data ophalen.
+  // Google's "pub?output=xlsx" accepteert extra query params en negeert onbekende.
+  const cacheBuster = '&_t=' + Date.now();
+  const baseUrl = TEAM_CONFIG.sheetUrl + cacheBuster;
   let lastErr = null;
   for(const proxy of CORS_PROXIES){
-    const url = proxy ? proxy + encodeURIComponent(TEAM_CONFIG.sheetUrl) : TEAM_CONFIG.sheetUrl;
+    const url = proxy ? proxy + encodeURIComponent(baseUrl) : baseUrl;
     try{
       const res = await fetch(url, {cache: 'no-store'});
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -2428,15 +2446,23 @@ function parseWorkbook(wb){
       const sheet = wb.Sheets[name];
       const rows = XLSX.utils.sheet_to_json(sheet, {raw:true, defval:null});
       for(const r of rows){
-        const naam = r['Bedrijfsnaam'] || r['BEDRIJFSNAAM'] || r['Klant'] || null;
-        const pc = r['Postcode'] || r['POSTCODE'] || null;
+        // Header-namen kunnen variëren — case-insensitive zoeken
+        let naam = null, pc = null;
+        for(const k of Object.keys(r)){
+          const kl = k.toLowerCase().trim();
+          if(!naam && (kl === 'bedrijfsnaam' || kl === 'klant' || kl === 'naam' || kl === 'firma')){
+            naam = r[k];
+          }
+          if(!pc && (kl === 'postcode' || kl === 'pc' || kl === 'zip')){
+            pc = r[k];
+          }
+        }
         if(naam && pc){
-          const key = String(naam).toUpperCase().trim();
-          if(!KLANT_TO_POSTCODE[key]) KLANT_TO_POSTCODE[key] = String(pc).trim();
+          const key = normalizeKlantName(naam);
+          if(key && !KLANT_TO_POSTCODE[key]) KLANT_TO_POSTCODE[key] = String(pc).trim();
         }
       }
     } catch(e){
-      // ignore — leads parsing is best-effort
       console.warn('Lead sheet parse failed:', name, e);
     }
   }
