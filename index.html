@@ -1464,6 +1464,17 @@ tr.row-telenet:hover td{background:linear-gradient(90deg, rgba(255,194,14,.18), 
   </div>
 </div>
 
+<!-- ============ DEBUG MODAL (Ctrl+Shift+D) ============ -->
+<div id="debug-modal" style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.85);align-items:center;justify-content:center;padding:20px;font-family:Inter,sans-serif">
+  <div style="background:#1a1a2e;color:#fff;max-width:800px;width:100%;padding:24px;border-radius:14px;max-height:90vh;overflow-y:auto;border:2px solid #ff006e">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <strong style="font-size:18px">🐞 Debug — wat is er geladen?</strong>
+      <button id="debug-close-btn" style="background:#333;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer">Sluiten</button>
+    </div>
+    <pre id="debug-content" style="background:#0a0a14;padding:14px;border-radius:8px;font-size:11px;overflow-x:auto;line-height:1.5;color:#06ffa5;font-family:'JetBrains Mono',monospace"></pre>
+  </div>
+</div>
+
 <!-- ============ TOP BAR ============ -->
 <div class="topbar">
   <div class="brand">
@@ -1855,7 +1866,7 @@ const TEAM_CONFIG = {
 // anders is dan de versie die nu draait. Als ja → toast + automatische reload.
 // Wijzig dit getal naar bv. '20260501-1' bij elke deploy om iedereen automatisch
 // te laten updaten zonder Ctrl+F5.
-const APP_VERSION = '20260430-2';
+const APP_VERSION = '20260430-4';
 const VERSION_CHECK_INTERVAL_MS = 2 * 60 * 1000; // elke 2 minuten checken
 // ============================================================
 
@@ -2220,6 +2231,25 @@ async function loadLiveData(isAutoRefresh = false){
 
     if(dataChanged || !isAutoRefresh){
       STATE.raw = rows;
+      // Debug-info — toegankelijk via Ctrl+Shift+D
+      window.__DEBUG_DATA = {
+        totalRows: rows.length,
+        rowsWithDate: rows.filter(r=>r.date).length,
+        rowsWithoutDate: rows.filter(r=>!r.date).length,
+        dateRange: (function(){
+          const dates = rows.map(r=>r.date).filter(Boolean).sort((a,b)=>a-b);
+          if(dates.length === 0) return 'geen data';
+          return dates[0].toLocaleDateString('nl-BE') + ' → ' + dates[dates.length-1].toLocaleDateString('nl-BE');
+        })(),
+        futureCount: rows.filter(r=>r.date && r.date > new Date()).length,
+        klantToPostcodeCount: Object.keys(KLANT_TO_POSTCODE).length,
+        klantsInData: [...new Set(rows.map(r=>r.klant).filter(Boolean))].length,
+        klantsWithRegion: rows.filter(r=>r.region).length,
+        sheetNames: wb.SheetNames,
+        sampleFutureRows: rows.filter(r=>r.date && r.date > new Date()).slice(0,5).map(r=>({
+          klant: r.klant, date: r.date?.toLocaleDateString('nl-BE'), status: r.status
+        }))
+      };
       initializeFilters();
       if(isAutoRefresh){
         // Behoud filters/preset bij auto-refresh — gewoon herberekenen
@@ -4046,10 +4076,27 @@ document.getElementById('recap-copy-btn').addEventListener('click', copyRecapTex
 document.getElementById('recap-screenshot-btn').addEventListener('click', downloadRecapScreenshot);
 
 document.addEventListener('keydown', e=>{
+  // Debug modal — Ctrl+Shift+I (zoals Inspect) of als je 5x snel achter elkaar 'D' drukt
+  if(e.ctrlKey && e.altKey && (e.key === 'D' || e.key === 'd')){
+    e.preventDefault();
+    showDebugModal();
+  }
   if(e.key === 'Escape'){
     if(document.getElementById('podium-overlay').classList.contains('active')) hidePodium();
     if(document.getElementById('recap-overlay').classList.contains('active')) closeRecap();
+    const dbg = document.getElementById('debug-modal');
+    if(dbg && dbg.style.display === 'flex') dbg.style.display = 'none';
   }
+});
+function showDebugModal(){
+  const data = window.__DEBUG_DATA || {melding: 'Geen data — log eerst in en wacht tot er data geladen is'};
+  document.getElementById('debug-content').textContent = JSON.stringify(data, null, 2);
+  document.getElementById('debug-modal').style.display = 'flex';
+}
+// Maak ook beschikbaar via console: typ "debug()" in F12 console
+window.debug = showDebugModal;
+document.getElementById('debug-close-btn').addEventListener('click', ()=>{
+  document.getElementById('debug-modal').style.display = 'none';
 });
 
 // Re-render charts on resize/orientation change for mobile responsiveness
