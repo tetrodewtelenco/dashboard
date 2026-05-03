@@ -595,7 +595,7 @@
   <section class="section">
     <div class="section-header">
       <h2 class="section-title"><span class="icon">📈</span> Evolutie</h2>
-      <div class="section-meta">Afspraken per dag · verleden + toekomst</div>
+      <div class="section-meta">Doorgegane afspraken per dag · 📶 Telenet · ⚡ Energie</div>
     </div>
     <div class="chart-card">
       <canvas id="chart-evolution"></canvas>
@@ -997,20 +997,20 @@ function renderEvolutionChart(){
   if(!canvas || typeof Chart === 'undefined') return;
 
   // Aggregeer per dag — alle data, verleden + toekomst
+  // Op de evolutie-grafiek tellen we ENKEL doorgegane afspraken (statussen GO/NO GO),
+  // niet de "geplande" afspraken. Reden: Wannes wil zien wat er effectief gebeurd is.
   const byDay = new Map();
   for(const r of STATE.raw){
     if(!r.date) continue;
     const key = `${r.date.getFullYear()}-${String(r.date.getMonth()+1).padStart(2,'0')}-${String(r.date.getDate()).padStart(2,'0')}`;
     if(!byDay.has(key)){
-      byDay.set(key, {date: new Date(r.date.getFullYear(), r.date.getMonth(), r.date.getDate()), appts:0, go:0, nogo:0, telenet:0});
+      byDay.set(key, {date: new Date(r.date.getFullYear(), r.date.getMonth(), r.date.getDate()), doorgegaan:0, telenet:0, energie:0});
     }
     const v = byDay.get(key);
-    v.appts++;
     if(isDoorgegaan(r.status)){
-      v.go++;
+      v.doorgegaan++;
       if(r.telenet) v.telenet++;
-    } else {
-      v.nogo++;
+      if(r.energie) v.energie++;
     }
   }
 
@@ -1021,9 +1021,9 @@ function renderEvolutionChart(){
   }
 
   const labels = sorted.map(d => d.date.toLocaleDateString('nl-BE',{day:'numeric',month:'short'}));
-  const apptsData = sorted.map(d => d.appts);
-  const goData = sorted.map(d => d.go);
+  const doorData = sorted.map(d => d.doorgegaan);
   const teleData = sorted.map(d => d.telenet);
+  const eneData = sorted.map(d => d.energie);
 
   // "Vandaag" annotation index
   const todayKey = (() => {
@@ -1043,28 +1043,18 @@ function renderEvolutionChart(){
       labels,
       datasets: [
         {
-          label: 'Afspraken',
-          data: apptsData,
-          borderColor: '#94a3b8',
-          backgroundColor: 'rgba(148,163,184,.1)',
-          borderWidth: 2,
+          label: 'Doorgegaan',
+          data: doorData,
+          borderColor: '#7cb342',
+          backgroundColor: 'rgba(124,179,66,.12)',
+          borderWidth: 2.5,
           tension: 0.35,
           pointRadius: 3,
           pointHoverRadius: 6,
           fill: true
         },
         {
-          label: 'Doorgegaan (GO)',
-          data: goData,
-          borderColor: '#7cb342',
-          backgroundColor: 'rgba(124,179,66,.15)',
-          borderWidth: 2.5,
-          tension: 0.35,
-          pointRadius: 3,
-          pointHoverRadius: 6
-        },
-        {
-          label: 'Telenet GO',
+          label: '📶 Telenet GO',
           data: teleData,
           borderColor: '#ffc20e',
           backgroundColor: 'rgba(255,194,14,.2)',
@@ -1072,6 +1062,16 @@ function renderEvolutionChart(){
           tension: 0.35,
           pointRadius: 4,
           pointHoverRadius: 7
+        },
+        {
+          label: '⚡ Energie GO',
+          data: eneData,
+          borderColor: '#e6007e',
+          backgroundColor: 'rgba(230,0,126,.15)',
+          borderWidth: 2.5,
+          tension: 0.35,
+          pointRadius: 3,
+          pointHoverRadius: 6
         }
       ]
     },
