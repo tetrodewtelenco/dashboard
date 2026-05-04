@@ -1732,7 +1732,7 @@ const TEAM_CONFIG = {
   authKey: 'telco-auth-v2'
 };
 
-const APP_VERSION = '20260504-1';
+const APP_VERSION = '20260504-2';
 const VERSION_CHECK_INTERVAL_MS = 2 * 60 * 1000;
 
 const CORS_PROXIES = [
@@ -1804,14 +1804,29 @@ const C = {
 };
 
 // ---------- DATE UTILS ----------
+// Nederlandse en Engelse maandnamen (afkortingen + volledige) → maandnummer 1-12
+const MONTH_MAP = {
+  'jan':1, 'januari':1, 'january':1,
+  'feb':2, 'februari':2, 'february':2,
+  'mrt':3, 'maart':3, 'mar':3, 'march':3,
+  'apr':4, 'april':4,
+  'mei':5, 'may':5,
+  'jun':6, 'juni':6, 'june':6,
+  'jul':7, 'juli':7, 'july':7,
+  'aug':8, 'augustus':8, 'august':8,
+  'sep':9, 'sept':9, 'september':9,
+  'okt':10, 'oktober':10, 'oct':10, 'october':10,
+  'nov':11, 'november':11,
+  'dec':12, 'december':12
+};
+
 function parseDate(v){
   if(!v && v !== 0) return null;
   let d = null;
   if(v instanceof Date){
     d = isNaN(v) ? null : v;
   } else if(typeof v === 'number'){
-    // Excel serial date — but only if reasonable
-    if(v > 25569 && v < 80000){ // 1970 to ~2119
+    if(v > 25569 && v < 80000){
       d = new Date(Math.round((v - 25569) * 86400 * 1000));
       if(isNaN(d)) d = null;
     }
@@ -1834,9 +1849,37 @@ function parseDate(v){
         if(isNaN(d)) d = null;
       }
     }
+    if(!d){
+      // Try Dutch month names: "7-mei", "7 mei", "7-mei-2026", "7 mei 2026"
+      // Also: "mei 7" of "mei 7, 2026"
+      const lower = s.toLowerCase().replace(/\./g, '');
+      // Pattern 1: "7-mei" of "7 mei" of "7-mei-2026"
+      const m1 = lower.match(/^(\d{1,2})[\s\-\/]+([a-z]{3,})(?:[\s\-\/]+(\d{2,4}))?/);
+      if(m1){
+        const dd = +m1[1];
+        const monthName = m1[2];
+        const monthNum = MONTH_MAP[monthName];
+        if(monthNum){
+          let yy;
+          if(m1[3]){
+            yy = +m1[3];
+            if(yy < 100) yy = yy < 50 ? 2000 + yy : 1900 + yy;
+          } else {
+            // Geen jaar — gebruik huidig jaar, of volgende jaar als de datum al voorbij is
+            const now = new Date();
+            yy = now.getFullYear();
+            const tryDate = new Date(yy, monthNum - 1, dd);
+            // Als de datum meer dan 6 maanden in het verleden ligt, neem volgend jaar
+            // Dit voorkomt dat "7 mei" in december 2026 als 7 mei 2026 wordt gelezen ipv 2027
+            const monthsAgo = (now - tryDate) / (1000 * 60 * 60 * 24 * 30);
+            if(monthsAgo > 6) yy++;
+          }
+          d = new Date(yy, monthNum - 1, dd);
+          if(isNaN(d)) d = null;
+        }
+      }
+    }
   }
-  // Sanity check: dates must be between 2015 and 2050 to be considered valid
-  // This filters out garbage like 1900-01-01 (Excel epoch) or 2001-04-01 (artifacts)
   if(d){
     const year = d.getFullYear();
     if(year < 2015 || year > 2050) return null;
