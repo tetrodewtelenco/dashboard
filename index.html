@@ -468,6 +468,87 @@ input[type="file"]{display:none}
   40%,80%{transform:translateX(4px)}
 }
 
+/* ============ SALES PERFORMANCE (verkoper cards) ============ */
+.sp-grid{display:flex;flex-direction:column;gap:8px}
+.sp-row{
+  display:grid;
+  grid-template-columns:160px 200px 1fr 1fr;
+  gap:14px;
+  padding:14px 16px;
+  background:#f5fbe8;
+  border-radius:10px;
+  border:1px solid #dceac4;
+  align-items:stretch;
+}
+.sp-row.is-top{
+  background:linear-gradient(90deg,#e8f7d8 0%,#f5fbe8 100%);
+  border-color:#a3c982;
+  box-shadow:0 2px 12px rgba(124,179,66,.18);
+}
+.sp-name-block{
+  display:flex;flex-direction:column;justify-content:center;align-items:flex-start;
+  gap:6px;
+}
+.sp-medal{
+  font-size:22px;line-height:1;
+  font-family:var(--font-display);font-weight:800;
+  color:var(--ink-2);
+}
+.sp-name{
+  font-family:var(--font-display);
+  font-weight:700;font-size:15px;
+  color:var(--ink);
+  letter-spacing:-.01em;
+  word-break:break-word;
+}
+.sp-money-block{
+  display:flex;flex-direction:column;justify-content:center;gap:5px;
+  padding-right:14px;border-right:1px dashed #cdd9b9;
+}
+.sp-money-line{display:flex;justify-content:space-between;font-size:13px;gap:14px}
+.sp-money-label{color:var(--ink-2);font-weight:500}
+.sp-money-val{font-family:var(--font-display);font-weight:700;color:var(--ink)}
+.sp-money-val.sp-strong{font-size:16px}
+.sp-stats-block{
+  display:flex;flex-direction:column;justify-content:center;gap:4px;
+  font-size:12.5px;
+}
+.sp-stat-line{display:flex;justify-content:space-between;gap:14px;color:var(--ink-2)}
+.sp-stat-line b{color:var(--ink);font-family:var(--font-display);font-weight:700}
+.sp-status-blocks{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr;
+  gap:6px;
+}
+.sp-status-block{
+  border-radius:8px;
+  padding:8px 10px;
+  color:#fff;
+  font-size:11px;font-weight:600;
+  display:flex;flex-direction:column;justify-content:center;gap:2px;
+  line-height:1.3;
+  text-align:left;
+}
+.sp-status-block b{font-family:var(--font-display);font-weight:800;font-size:13px;margin-left:auto}
+.sp-sb-num,.sp-sb-pct{display:flex;justify-content:space-between;align-items:center}
+.sp-closed{background:#e74c3c}
+.sp-cancel{background:#9c5fb5}
+.sp-go{background:#5cb85c}
+.sp-nogo{background:#e98a8a;color:#5b1a1a}
+.sp-nogo b{color:#5b1a1a}
+
+@media (max-width:1100px){
+  .sp-row{grid-template-columns:140px 1fr;grid-template-areas:'name money' 'stats stats' 'status status';gap:10px}
+  .sp-name-block{grid-area:name}
+  .sp-money-block{grid-area:money;border-right:none;padding-right:0;border-bottom:1px dashed #cdd9b9;padding-bottom:10px}
+  .sp-stats-block{grid-area:stats}
+  .sp-status-blocks{grid-area:status}
+}
+@media (max-width:600px){
+  .sp-status-blocks{grid-template-columns:1fr 1fr;gap:5px}
+  .sp-row{padding:12px}
+}
+
 /* ============ LIVE STATUS + LOGOUT ============ */
 .live-status{
   display:inline-flex;align-items:center;gap:8px;
@@ -1602,48 +1683,18 @@ tr.row-telenet:hover td{background:linear-gradient(90deg, rgba(255,194,14,.18), 
     </div>
   </div>
 
-  <!-- Region Map -->
+  <!-- Sales Performance — duidelijke verkoper-cards zoals oude systeem -->
   <div class="section">
     <div class="card">
       <div class="card-header">
         <div>
           <div class="card-title" style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:20px">🗺️</span> Performance per regio
+            <span style="font-size:20px">📊</span> Verkoper Performance
           </div>
-          <div class="card-subtitle">Tel & Co regio's — kleur op basis van geselecteerde metric</div>
-        </div>
-        <div class="card-tabs" id="region-tabs">
-          <button class="card-tab active" data-metric="combo">Combo %</button>
-          <button class="card-tab" data-metric="telenet">Telenet %</button>
-          <button class="card-tab" data-metric="energy">Energie %</button>
-          <button class="card-tab" data-metric="appts">Afspraken</button>
+          <div class="card-subtitle">Per sales: omzet, afspraken, en uitsplitsing per status</div>
         </div>
       </div>
-      <div id="region-map" class="region-map"></div>
-      <div id="region-legend" class="region-legend"></div>
-      <div id="region-no-match" class="region-no-match"></div>
-    </div>
-  </div>
-
-  <!-- Status pie + Sales comparison -->
-  <div class="section section-grid-2">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Status Verdeling</div>
-          <div class="card-subtitle">Resultaat van afspraken</div>
-        </div>
-      </div>
-      <div class="chart-wrap"><canvas id="chart-status"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Sales Vergelijking</div>
-          <div class="card-subtitle">Energie vs Telenet conversie</div>
-        </div>
-      </div>
-      <div class="chart-wrap"><canvas id="chart-sales-compare"></canvas></div>
+      <div id="sales-performance"></div>
     </div>
   </div>
 
@@ -1732,7 +1783,7 @@ const TEAM_CONFIG = {
   authKey: 'telco-auth-v2'
 };
 
-const APP_VERSION = '20260504-2';
+const APP_VERSION = '20260504-3';
 const VERSION_CHECK_INTERVAL_MS = 2 * 60 * 1000;
 
 const CORS_PROXIES = [
@@ -2474,9 +2525,7 @@ function render(){
   renderFunnel();
   renderPlannerLeaderboard();
   renderSalesLeaderboard();
-  renderRegionMap();
-  renderStatusChart();
-  renderSalesCompareChart();
+  renderSalesPerformance();
   renderRecommendations();
   renderPlannerQuality();
   renderTable();
@@ -3326,6 +3375,126 @@ function computeSalesScores(){
   return {scored, excluded: data.filter(d => d.doorgegaan < MIN_APPTS), maxRev: maxRevPerAppt};
 }
 
+// ---------- SALES PERFORMANCE (per verkoper, alle cijfers in 1 rij zoals oude systeem) ----------
+function renderSalesPerformance(){
+  const f = STATE.filtered;
+  const sales = [...new Set(f.map(r => r.sales).filter(Boolean))];
+
+  const cards = sales.map(name => {
+    const rows = f.filter(r => r.sales === name);
+    const total = rows.length;
+    // Status counts
+    let go = 0, nogo = 0, closedDoor = 0, cancel = 0, overmacht = 0, pending = 0;
+    let omzetTotal = 0;
+    let omzetReceived = 0;  // omzet voor afspraken die DOORGEGAAN zijn
+    let omzetToday = 0;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    let workDays = new Set();
+    let goCombo = 0, goTele = 0, goEnergy = 0;
+
+    for(const r of rows){
+      const u = (r.status || '').toUpperCase().trim();
+      if(u === 'GO') go++;
+      else if(u === 'NO GO') nogo++;
+      else if(u.includes('CLOSED')) closedDoor++;
+      else if(u === 'CANCEL') cancel++;
+      else if(u === 'OVERMACHT') overmacht++;
+      else if(u === 'PENDING') pending++;
+
+      if(isDoorgegaan(r.status)){
+        omzetReceived += (r.omzet || 0);
+        if(r.date){
+          const dKey = r.date.toDateString();
+          workDays.add(dKey);
+          if(r.date >= today && r.date < tomorrow){
+            omzetToday += (r.omzet || 0);
+          }
+        }
+        if(u === 'GO'){
+          if(r.telenet && r.energie) goCombo++;
+          else if(r.telenet) goTele++;
+          else if(r.energie) goEnergy++;
+        }
+      }
+      omzetTotal += (r.omzet || 0);
+    }
+
+    const doorgegaan = go + nogo;
+    const goPct = doorgegaan > 0 ? Math.round(go/doorgegaan*100) : 0;
+    const nogoPct = doorgegaan > 0 ? Math.round(nogo/doorgegaan*100) : 0;
+    const closedPct = total > 0 ? Math.round(closedDoor/total*100) : 0;
+    const cancelPct = total > 0 ? Math.round(cancel/total*100) : 0;
+    const dagen = workDays.size;
+    const gemPerDag = dagen > 0 ? (doorgegaan/dagen).toFixed(1) : '0';
+    const gemOmzetDag = dagen > 0 ? Math.round(omzetReceived/dagen) : 0;
+    const gemOmzetGo = go > 0 ? Math.round(omzetReceived/go) : 0;
+
+    return {
+      name, total, go, nogo, closedDoor, cancel, overmacht, pending,
+      omzetTotal, omzetReceived, omzetToday, dagen, gemPerDag, gemOmzetDag, gemOmzetGo,
+      goPct, nogoPct, closedPct, cancelPct, doorgegaan
+    };
+  })
+  .filter(s => s.total > 0)
+  .sort((a, b) => b.go - a.go || b.omzetReceived - a.omzetReceived);
+
+  const container = document.getElementById('sales-performance');
+  if(cards.length === 0){
+    container.innerHTML = '<div class="rec-empty">Geen sales data in deze periode</div>';
+    return;
+  }
+
+  const html = `
+    <div class="sp-grid">
+      ${cards.map((c, i) => {
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)+'.';
+        return `
+        <div class="sp-row ${i === 0 ? 'is-top' : ''}">
+          <div class="sp-name-block">
+            <div class="sp-medal">${medal}</div>
+            <div class="sp-name">${escapeHtml(c.name)}</div>
+          </div>
+          <div class="sp-money-block">
+            <div class="sp-money-line"><span class="sp-money-label">Verkocht</span><span class="sp-money-val">€${c.omzetTotal.toLocaleString('nl-BE')}</span></div>
+            <div class="sp-money-line"><span class="sp-money-label">Ontvangen</span><span class="sp-money-val sp-strong">€${c.omzetReceived.toLocaleString('nl-BE')}</span></div>
+            <div class="sp-money-line"><span class="sp-money-label">Vandaag</span><span class="sp-money-val">€${c.omzetToday.toLocaleString('nl-BE')}</span></div>
+          </div>
+          <div class="sp-stats-block">
+            <div class="sp-stat-line"><span># afspraken:</span><b>${c.total}</b></div>
+            <div class="sp-stat-line"><span># gewerkte dagen:</span><b>${c.dagen}</b></div>
+            <div class="sp-stat-line"><span>Gem. afspraken/dag:</span><b>${c.gemPerDag}</b></div>
+            <div class="sp-stat-line"><span>Gem. omzet/dag:</span><b>€${c.gemOmzetDag.toLocaleString('nl-BE')}</b></div>
+            <div class="sp-stat-line"><span>Gem. omzet/GO:</span><b>€${c.gemOmzetGo.toLocaleString('nl-BE')}</b></div>
+          </div>
+          <div class="sp-status-blocks">
+            <div class="sp-status-block sp-closed">
+              <div class="sp-sb-num"># Closed door:&nbsp;<b>${c.closedDoor}</b></div>
+              <div class="sp-sb-pct">% Closed door:&nbsp;<b>${c.closedPct}%</b></div>
+            </div>
+            <div class="sp-status-block sp-cancel">
+              <div class="sp-sb-num"># Cancel:&nbsp;<b>${c.cancel}</b></div>
+              <div class="sp-sb-pct">% Cancel:&nbsp;<b>${c.cancelPct}%</b></div>
+            </div>
+            <div class="sp-status-block sp-go">
+              <div class="sp-sb-num"># GO:&nbsp;<b>${c.go}</b></div>
+              <div class="sp-sb-pct">% GO:&nbsp;<b>${c.goPct}%</b></div>
+            </div>
+            <div class="sp-status-block sp-nogo">
+              <div class="sp-sb-num"># NO GO:&nbsp;<b>${c.nogo}</b></div>
+              <div class="sp-sb-pct">% NO GO:&nbsp;<b>${c.nogoPct}%</b></div>
+            </div>
+          </div>
+        </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+  container.innerHTML = html;
+}
+
 function renderRecommendations(){
   const {scored, excluded} = computeSalesScores();
   const container = document.getElementById('recommendations');
@@ -3967,8 +4136,6 @@ window.addEventListener('resize', ()=>{
   resizeTimer = setTimeout(()=>{
     if(STATE.filtered.length > 0){
       renderTimeChart();
-      renderStatusChart();
-      renderSalesCompareChart();
     }
   }, 250);
 });
