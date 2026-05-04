@@ -1783,7 +1783,7 @@ const TEAM_CONFIG = {
   authKey: 'telco-auth-v2'
 };
 
-const APP_VERSION = '20260504-3';
+const APP_VERSION = '20260504-4';
 const VERSION_CHECK_INTERVAL_MS = 2 * 60 * 1000;
 
 const CORS_PROXIES = [
@@ -1992,6 +1992,9 @@ function parseRevenue(v){
 function cleanStr(v){
   if(v === null || v === undefined) return '';
   return String(v).trim();
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function statusClass(s){
   const u = (s||'').toUpperCase();
