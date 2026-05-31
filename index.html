@@ -468,31 +468,35 @@ input[type="file"]{display:none}
   40%,80%{transform:translateX(4px)}
 }
 
-/* ============ SALES PERFORMANCE (verkoper cards) ============ */
+/* ============ SALES PERFORMANCE (verkoper cards — inklapbaar) ============ */
 .sp-grid{display:flex;flex-direction:column;gap:8px}
-.sp-row{
-  display:grid;
-  grid-template-columns:160px 200px 1fr 1fr;
-  gap:14px;
-  padding:14px 16px;
+.sp-card{
   background:#f5fbe8;
   border-radius:10px;
   border:1px solid #dceac4;
-  align-items:stretch;
+  overflow:hidden;
+  transition:box-shadow .2s, border-color .2s;
 }
-.sp-row.is-top{
+.sp-card.is-top{
   background:linear-gradient(90deg,#e8f7d8 0%,#f5fbe8 100%);
   border-color:#a3c982;
   box-shadow:0 2px 12px rgba(124,179,66,.18);
 }
-.sp-name-block{
-  display:flex;flex-direction:column;justify-content:center;align-items:flex-start;
-  gap:6px;
+.sp-card[open]{box-shadow:var(--shadow)}
+.sp-summary{
+  display:flex;align-items:center;gap:14px;
+  padding:13px 16px;
+  cursor:pointer;
+  list-style:none;
+  user-select:none;
 }
+.sp-summary::-webkit-details-marker{display:none}
+.sp-summary:hover{background:rgba(124,179,66,.06)}
 .sp-medal{
-  font-size:22px;line-height:1;
+  font-size:20px;line-height:1;
   font-family:var(--font-display);font-weight:800;
   color:var(--ink-2);
+  min-width:26px;text-align:center;flex-shrink:0;
 }
 .sp-name{
   font-family:var(--font-display);
@@ -500,6 +504,37 @@ input[type="file"]{display:none}
   color:var(--ink);
   letter-spacing:-.01em;
   word-break:break-word;
+  flex:1;min-width:0;
+}
+.sp-summary-metrics{
+  display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;
+}
+.sp-chip{
+  font-size:12px;color:var(--ink-2);font-weight:500;
+  background:rgba(255,255,255,.7);
+  border:1px solid #dceac4;
+  padding:4px 10px;border-radius:999px;
+  white-space:nowrap;
+}
+.sp-chip b{font-family:var(--font-display);font-weight:700;color:var(--ink)}
+.sp-chip-go{background:rgba(92,184,92,.15);border-color:rgba(92,184,92,.35)}
+.sp-chip-go b{color:var(--green-deep)}
+.sp-chip-rev{background:#fff;font-family:var(--font-display);font-weight:700;color:var(--ink)}
+.sp-chevron{
+  display:flex;align-items:center;justify-content:center;
+  width:22px;height:22px;color:var(--ink-3);flex-shrink:0;
+  transition:transform .2s;
+}
+.sp-chevron svg{width:16px;height:16px}
+.sp-card[open] .sp-chevron{transform:rotate(90deg)}
+.sp-detail{
+  display:grid;
+  grid-template-columns:230px 1fr 1.3fr;
+  gap:14px;
+  padding:4px 16px 16px;
+  border-top:1px dashed #d3e2bb;
+  margin-top:2px;
+  align-items:stretch;
 }
 .sp-money-block{
   display:flex;flex-direction:column;justify-content:center;gap:5px;
@@ -538,16 +573,29 @@ input[type="file"]{display:none}
 .sp-nogo b{color:#5b1a1a}
 
 @media (max-width:1100px){
-  .sp-row{grid-template-columns:140px 1fr;grid-template-areas:'name money' 'stats stats' 'status status';gap:10px}
-  .sp-name-block{grid-area:name}
-  .sp-money-block{grid-area:money;border-right:none;padding-right:0;border-bottom:1px dashed #cdd9b9;padding-bottom:10px}
-  .sp-stats-block{grid-area:stats}
-  .sp-status-blocks{grid-area:status}
+  .sp-detail{grid-template-columns:1fr;gap:12px}
+  .sp-money-block{border-right:none;padding-right:0;border-bottom:1px dashed #cdd9b9;padding-bottom:12px}
 }
 @media (max-width:600px){
+  .sp-summary-metrics .sp-chip:first-child{display:none}
   .sp-status-blocks{grid-template-columns:1fr 1fr;gap:5px}
-  .sp-row{padding:12px}
 }
+
+/* ============ COLLAPSIBLE SECTION CARDS ============ */
+.card.collapsible > .card-header{cursor:pointer;user-select:none}
+.card.collapsible > .card-header::after{
+  content:'';
+  width:18px;height:18px;flex-shrink:0;margin-left:14px;
+  background:no-repeat center/contain;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7670' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E") no-repeat center/contain;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7670' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E") no-repeat center/contain;
+  background-color:var(--ink-3);
+  transform:rotate(90deg);
+  transition:transform .2s;
+}
+.card.collapsible.is-collapsed > .card-header{margin-bottom:0}
+.card.collapsible.is-collapsed > .card-header::after{transform:rotate(0deg)}
+.card.collapsible.is-collapsed > .card-header ~ *{display:none}
 
 /* ============ LIVE STATUS + LOGOUT ============ */
 .live-status{
@@ -1685,13 +1733,13 @@ tr.row-telenet:hover td{background:linear-gradient(90deg, rgba(255,194,14,.18), 
 
   <!-- Sales Performance — duidelijke verkoper-cards zoals oude systeem -->
   <div class="section">
-    <div class="card">
+    <div class="card collapsible">
       <div class="card-header">
         <div>
           <div class="card-title" style="display:flex;align-items:center;gap:8px">
             <span style="font-size:20px">📊</span> Verkoper Performance
           </div>
-          <div class="card-subtitle">Per sales: omzet, afspraken, en uitsplitsing per status</div>
+          <div class="card-subtitle">Per sales: klik op een verkoper voor het detail</div>
         </div>
       </div>
       <div id="sales-performance"></div>
@@ -1700,7 +1748,7 @@ tr.row-telenet:hover td{background:linear-gradient(90deg, rgba(255,194,14,.18), 
 
   <!-- Smart Recommendations -->
   <div class="section">
-    <div class="card recommendation-card">
+    <div class="card recommendation-card collapsible is-collapsed">
       <div class="card-header">
         <div>
           <div class="card-title" style="display:flex;align-items:center;gap:8px">
@@ -1720,7 +1768,7 @@ tr.row-telenet:hover td{background:linear-gradient(90deg, rgba(255,194,14,.18), 
 
   <!-- Planner Quality (Closed Door detection) -->
   <div class="section">
-    <div class="card">
+    <div class="card collapsible is-collapsed">
       <div class="card-header">
         <div>
           <div class="card-title" style="display:flex;align-items:center;gap:8px">
@@ -1735,7 +1783,7 @@ tr.row-telenet:hover td{background:linear-gradient(90deg, rgba(255,194,14,.18), 
 
   <!-- Detail table -->
   <div class="section">
-    <div class="card">
+    <div class="card collapsible is-collapsed">
       <div class="card-header">
         <div>
           <div class="card-title">Afspraken Detail</div>
@@ -2546,7 +2594,8 @@ function renderRangeInfo(){
 function renderKPIs(){
   const f = STATE.filtered;
   const total = f.length;
-  // "Doorgegaan" = afspraak vond effectief plaats (geen closed door / cancel / overmacht / verwijderd / pending).
+  // "Doorgegaan" = afspraak vond effectief plaats (geen closed door / cancel / overmacht / verwijderd).
+  // PENDING telt mee als doorgegaan (uitkomst nog open) — dit verlaagt bewust de conversie-% en gem. omzet.
   // Alle conversie-percentages én omzet gebruiken DIT als noemer — anders zijn de cijfers vertekend
   // door afspraken die nooit doorgingen of nog geen status hebben.
   const doorgegaanRows = f.filter(r => isDoorgegaan(r.status));
@@ -2621,10 +2670,11 @@ function renderFunnel(){
   const overmacht = f.filter(r => (r.status||'').toUpperCase() === 'OVERMACHT').length;
   const pending = f.filter(r => (r.status||'').toUpperCase() === 'PENDING').length;
 
-  // "Doorgegaan" = sales actually visited and engaged (not closed door / cancel / overmacht / pending / verwijderd)
+  // "Doorgegaan" = sales actually visited and engaged (not closed door / cancel / overmacht / verwijderd).
+  // PENDING telt mee als doorgegaan (afspraak vond plaats, uitkomst nog open).
   const notDoorgegaan = (s)=> {
     const u = (s||'').toUpperCase();
-    return u.includes('CLOSED') || u === 'CANCEL' || u === 'OVERMACHT' || u.includes('VERWIJDERD') || u === 'PENDING';
+    return u.includes('CLOSED') || u === 'CANCEL' || u === 'OVERMACHT' || u.includes('VERWIJDERD');
   };
   const reached = f.filter(r => !notDoorgegaan(r.status)).length;
 
@@ -2643,13 +2693,12 @@ function renderFunnel(){
       drops: []
     },
     {
-      name:'Afspraak doorgegaan', desc:'Sales is langs geweest',
+      name:'Afspraak doorgegaan', desc:'Sales is langs geweest (incl. pending)',
       num:reached, color:'#a8c585', icon:'🚗',
       drops: [
         {label:'Closed door', num: closedDoor},
         {label:'Cancel', num: cancel},
-        {label:'Overmacht', num: overmacht},
-        {label:'Pending', num: pending}
+        {label:'Overmacht', num: overmacht}
       ].filter(d => d.num > 0)
     },
     {
@@ -2657,7 +2706,8 @@ function renderFunnel(){
       num:goEnergy, color:'#7cb342', icon:'⚡',
       drops: [
         {label:'No go', num: noGo},
-        {label:'Geen interesse energie', num: Math.max(0, reachedNoEnergy - noGo)}
+        {label:'Pending — uitkomst nog open', num: pending},
+        {label:'Geen interesse energie', num: Math.max(0, reachedNoEnergy - noGo - pending)}
       ].filter(d => d.num > 0)
     },
     {
@@ -2776,10 +2826,12 @@ function renderTimeChart(){
 }
 
 // ---------- LEADERBOARDS ----------
-// "Doorgegaan" = afspraak vond effectief plaats (geen closed door, cancel, overmacht, verwijderd, pending).
-// NaN/lege status telt als doorgegaan (default optimistisch — afspraak staat nog open).
+// "Doorgegaan" = afspraak vond effectief plaats (geen closed door, cancel, overmacht, verwijderd).
+// PENDING telt mee als doorgegaan (uitkomst nog open). Lege status telt NIET mee (onbekend).
 function isDoorgegaan(status){
-  // Een afspraak telt enkel als doorgegaan met expliciete positieve status (GO of NO GO).
+  // Een afspraak telt als doorgegaan zodra sales effectief is langs geweest.
+  // PENDING telt mee als doorgegaan (afspraak vond plaats, uitkomst nog open) — zoals bij Mytelenco.
+  // Enkel closed door / cancel / overmacht / verwijderd zijn écht niet doorgegaan.
   // Lege status = niet doorgegaan (we weten het niet, dus telt niet).
   if(!status) return false;
   const u = String(status).trim().toUpperCase();
@@ -2788,7 +2840,6 @@ function isDoorgegaan(status){
   if(u === 'CANCEL') return false;
   if(u === 'OVERMACHT') return false;
   if(u.includes('VERWIJDERD')) return false;
-  if(u === 'PENDING') return false;
   return true;
 }
 
@@ -2979,7 +3030,7 @@ function renderPlannerLeaderboard(){
 }
 function computeHotStreaks(){
   // Returns a Set of sales names who are on a hot streak.
-  // Only considers DOORGEGANE appointments (closed doors / cancels / overmacht / pending excluded).
+  // Only considers DOORGEGANE appointments (closed doors / cancels / overmacht excluded; pending telt mee).
   // "Skill rate" = (2*telenet + energy) / (3*doorgegaan), Telenet weighted 2x because it's the focus.
   // 🔥 if recent rate >= 1.25 * all-time rate AND recent rate >= 0.50.
   const raw = STATE.raw.filter(r => r.sales && r.date && isDoorgegaan(r.status));
@@ -3041,7 +3092,7 @@ function renderSalesLeaderboard(){
   let data = aggregate(STATE.filtered, 'sales');
   const hotSet = computeHotStreaks();
   const streakMap = computeStreaks();
-  // Enrich rates — denominator is "doorgegaan" (effective appointments, no closed doors / cancels / overmacht / pending / verwijderd).
+  // Enrich rates — denominator is "doorgegaan" (effective appointments, no closed doors / cancels / overmacht / verwijderd; pending telt mee).
   // This gives a fair comparison: nobody is rewarded or penalised for the share of cancels.
   data = data.map(d => {
     const den = d.doorgegaan;  // effective appointments
@@ -3388,6 +3439,7 @@ function renderSalesPerformance(){
     const total = rows.length;
     // Status counts
     let go = 0, nogo = 0, closedDoor = 0, cancel = 0, overmacht = 0, pending = 0;
+    let doorgegaanCount = 0;
     let omzetTotal = 0;
     let omzetReceived = 0;  // omzet voor afspraken die DOORGEGAAN zijn
     let omzetToday = 0;
@@ -3408,6 +3460,7 @@ function renderSalesPerformance(){
       else if(u === 'PENDING') pending++;
 
       if(isDoorgegaan(r.status)){
+        doorgegaanCount++;
         omzetReceived += (r.omzet || 0);
         if(r.date){
           const dKey = r.date.toDateString();
@@ -3425,7 +3478,7 @@ function renderSalesPerformance(){
       omzetTotal += (r.omzet || 0);
     }
 
-    const doorgegaan = go + nogo;
+    const doorgegaan = doorgegaanCount;
     const goPct = doorgegaan > 0 ? Math.round(go/doorgegaan*100) : 0;
     const nogoPct = doorgegaan > 0 ? Math.round(nogo/doorgegaan*100) : 0;
     const closedPct = total > 0 ? Math.round(closedDoor/total*100) : 0;
@@ -3455,42 +3508,54 @@ function renderSalesPerformance(){
       ${cards.map((c, i) => {
         const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)+'.';
         return `
-        <div class="sp-row ${i === 0 ? 'is-top' : ''}">
-          <div class="sp-name-block">
-            <div class="sp-medal">${medal}</div>
-            <div class="sp-name">${escapeHtml(c.name)}</div>
-          </div>
-          <div class="sp-money-block">
-            <div class="sp-money-line"><span class="sp-money-label">Verkocht</span><span class="sp-money-val">€${c.omzetTotal.toLocaleString('nl-BE')}</span></div>
-            <div class="sp-money-line"><span class="sp-money-label">Ontvangen</span><span class="sp-money-val sp-strong">€${c.omzetReceived.toLocaleString('nl-BE')}</span></div>
-            <div class="sp-money-line"><span class="sp-money-label">Vandaag</span><span class="sp-money-val">€${c.omzetToday.toLocaleString('nl-BE')}</span></div>
-          </div>
-          <div class="sp-stats-block">
-            <div class="sp-stat-line"><span># afspraken:</span><b>${c.total}</b></div>
-            <div class="sp-stat-line"><span># gewerkte dagen:</span><b>${c.dagen}</b></div>
-            <div class="sp-stat-line"><span>Gem. afspraken/dag:</span><b>${c.gemPerDag}</b></div>
-            <div class="sp-stat-line"><span>Gem. omzet/dag:</span><b>€${c.gemOmzetDag.toLocaleString('nl-BE')}</b></div>
-            <div class="sp-stat-line"><span>Gem. omzet/GO:</span><b>€${c.gemOmzetGo.toLocaleString('nl-BE')}</b></div>
-          </div>
-          <div class="sp-status-blocks">
-            <div class="sp-status-block sp-closed">
-              <div class="sp-sb-num"># Closed door:&nbsp;<b>${c.closedDoor}</b></div>
-              <div class="sp-sb-pct">% Closed door:&nbsp;<b>${c.closedPct}%</b></div>
+        <details class="sp-card${i === 0 ? ' is-top' : ''}"${i === 0 ? ' open' : ''}>
+          <summary class="sp-summary">
+            <span class="sp-medal">${medal}</span>
+            <span class="sp-name">${escapeHtml(c.name)}</span>
+            <span class="sp-summary-metrics">
+              <span class="sp-chip"><b>${c.doorgegaan}</b>&nbsp;doorgegaan</span>
+              <span class="sp-chip sp-chip-go"><b>${c.goPct}%</b>&nbsp;GO</span>
+              <span class="sp-chip sp-chip-rev">€${c.omzetReceived.toLocaleString('nl-BE')}</span>
+            </span>
+            <span class="sp-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </span>
+          </summary>
+          <div class="sp-detail">
+            <div class="sp-money-block">
+              <div class="sp-money-line"><span class="sp-money-label">Verkocht</span><span class="sp-money-val">€${c.omzetTotal.toLocaleString('nl-BE')}</span></div>
+              <div class="sp-money-line"><span class="sp-money-label">Ontvangen</span><span class="sp-money-val sp-strong">€${c.omzetReceived.toLocaleString('nl-BE')}</span></div>
+              <div class="sp-money-line"><span class="sp-money-label">Vandaag</span><span class="sp-money-val">€${c.omzetToday.toLocaleString('nl-BE')}</span></div>
             </div>
-            <div class="sp-status-block sp-cancel">
-              <div class="sp-sb-num"># Cancel:&nbsp;<b>${c.cancel}</b></div>
-              <div class="sp-sb-pct">% Cancel:&nbsp;<b>${c.cancelPct}%</b></div>
+            <div class="sp-stats-block">
+              <div class="sp-stat-line"><span># afspraken:</span><b>${c.total}</b></div>
+              <div class="sp-stat-line"><span># doorgegaan:</span><b>${c.doorgegaan}</b></div>
+              <div class="sp-stat-line"><span># pending:</span><b>${c.pending}</b></div>
+              <div class="sp-stat-line"><span># gewerkte dagen:</span><b>${c.dagen}</b></div>
+              <div class="sp-stat-line"><span>Gem. afspraken/dag:</span><b>${c.gemPerDag}</b></div>
+              <div class="sp-stat-line"><span>Gem. omzet/dag:</span><b>€${c.gemOmzetDag.toLocaleString('nl-BE')}</b></div>
+              <div class="sp-stat-line"><span>Gem. omzet/GO:</span><b>€${c.gemOmzetGo.toLocaleString('nl-BE')}</b></div>
             </div>
-            <div class="sp-status-block sp-go">
-              <div class="sp-sb-num"># GO:&nbsp;<b>${c.go}</b></div>
-              <div class="sp-sb-pct">% GO:&nbsp;<b>${c.goPct}%</b></div>
-            </div>
-            <div class="sp-status-block sp-nogo">
-              <div class="sp-sb-num"># NO GO:&nbsp;<b>${c.nogo}</b></div>
-              <div class="sp-sb-pct">% NO GO:&nbsp;<b>${c.nogoPct}%</b></div>
+            <div class="sp-status-blocks">
+              <div class="sp-status-block sp-closed">
+                <div class="sp-sb-num"># Closed door:&nbsp;<b>${c.closedDoor}</b></div>
+                <div class="sp-sb-pct">% Closed door:&nbsp;<b>${c.closedPct}%</b></div>
+              </div>
+              <div class="sp-status-block sp-cancel">
+                <div class="sp-sb-num"># Cancel:&nbsp;<b>${c.cancel}</b></div>
+                <div class="sp-sb-pct">% Cancel:&nbsp;<b>${c.cancelPct}%</b></div>
+              </div>
+              <div class="sp-status-block sp-go">
+                <div class="sp-sb-num"># GO:&nbsp;<b>${c.go}</b></div>
+                <div class="sp-sb-pct">% GO:&nbsp;<b>${c.goPct}%</b></div>
+              </div>
+              <div class="sp-status-block sp-nogo">
+                <div class="sp-sb-num"># NO GO:&nbsp;<b>${c.nogo}</b></div>
+                <div class="sp-sb-pct">% NO GO:&nbsp;<b>${c.nogoPct}%</b></div>
+              </div>
             </div>
           </div>
-        </div>
+        </details>
         `;
       }).join('')}
     </div>
@@ -4041,6 +4106,14 @@ document.querySelectorAll('#region-tabs .card-tab').forEach(t=>{
     t.classList.add('active');
     STATE.regionMetric = t.dataset.metric;
     renderRegionMap();
+  });
+});
+// Inklapbare sectie-kaarten: klik op de header om te tonen/verbergen.
+// Klikken op knoppen, tabs of kolomkoppen in de header mag NIET inklappen.
+document.querySelectorAll('.card.collapsible > .card-header').forEach(header=>{
+  header.addEventListener('click', (e)=>{
+    if(e.target.closest('button, a, input, select, label, .card-tabs')) return;
+    header.parentElement.classList.toggle('is-collapsed');
   });
 });
 document.querySelectorAll('#detail-table th').forEach(th=>{
