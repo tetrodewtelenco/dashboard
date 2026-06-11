@@ -342,6 +342,21 @@ tr:nth-child(3) td .rank{background:#e8c39e;color:#6d4c1f}
 .game-overlay.hide{display:none}
 .game-overlay h3{font-family:var(--fd);font-weight:800;font-size:24px}
 .game-overlay .sub{font-size:13.5px;color:var(--ink-2);font-family:var(--fm)}
+.game-overlay input{padding:10px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);font-family:var(--fb);font-size:14px;font-weight:600;text-align:center;outline:none;width:min(240px,82%);color:var(--ink)}
+.game-overlay input:focus{border-color:var(--green)}
+.g-err{color:var(--bad);font-size:12px;font-weight:700;min-height:16px}
+.game-grid{display:grid;grid-template-columns:1fr 235px;gap:14px;align-items:stretch}
+@media(max-width:820px){.game-grid{grid-template-columns:1fr}}
+.game-lb{background:var(--soft);border-radius:14px;padding:14px 16px}
+.game-lb h4{font-family:var(--fd);font-size:12.5px;margin-bottom:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
+.game-lb h4 .lb-note{font-family:var(--fm);font-size:9.5px;color:var(--ink-4);text-transform:none;letter-spacing:0}
+.lb-row{display:flex;align-items:center;gap:9px;padding:5.5px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.lb-row:last-child{border-bottom:none}
+.lb-row.top .lb-name,.lb-row.top .lb-score{font-weight:800}
+.lb-rank{width:24px;text-align:center;font-family:var(--fm);font-size:11px;font-weight:700;color:var(--ink-3);flex-shrink:0}
+.lb-name{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-score{font-family:var(--fm);font-weight:700;font-variant-numeric:tabular-nums}
+.lb-empty{font-size:12px;color:var(--ink-4);padding:4px 0}
 
 /* ===== states ===== */
 .state{max-width:560px;margin:90px auto;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:48px 36px;box-shadow:var(--shadow)}
@@ -965,18 +980,24 @@ function render(){
   <div class="dcount" id="detailCount">${detailCountText()}</div>
   ${SEC_END}
 
-  ${secOpen("game","09","Pauze · Cross-sell Catcher 🎮")}
+  ${secOpen("game","09","Pauze · Tel&Co Arcade 🎮")}
   <div class="game-card reveal">
     <div class="game-top">
-      <div class="game-info">Jij bent de Tel&amp;Co-verkoper! Vang <b>⚡ energie</b> (+10) en <b>Telenet-mannetjes</b> (+25 — vang ze vlak na een energie voor de <b>CROSS-SELL bonus</b>), en ontwijk 🚪 closed doors en ❌ cancels. Besturen met ←&nbsp;→, muis of vinger.</div>
-      <div class="game-stats"><span id="gScore">0</span> ptn · ❤️ <span id="gLives">3</span> · record <b id="gHigh">${localStorage.getItem("tc-game-hs")||0}</b></div>
+      <div class="game-tabs gran">
+        <button data-g="catch" class="${gameSel==="catch"?"on":""}" onclick="setGameSel('catch')">🧲 Cross-sell Catcher</button>
+        <button data-g="race" class="${gameSel==="race"?"on":""}" onclick="setGameSel('race')">🚗 Tel&Co Racer</button>
+      </div>
+      <div class="game-stats"><span id="gScore">0</span> ptn · <span id="gLives">❤️❤️❤️</span></div>
     </div>
-    <div class="game-wrap">
-      <canvas id="gameCv"></canvas>
-      <div class="game-overlay" id="gameOv">
-        <h3>Cross-sell Catcher</h3>
-        <div class="sub">Hoeveel omzet haal jij binnen?</div>
-        <button class="btn" onclick="startGame()">▶ Start het spel</button>
+    <div class="game-info" id="gInfo" style="margin-bottom:12px">${GAME_INFO[gameSel]}</div>
+    <div class="game-grid">
+      <div class="game-wrap">
+        <canvas id="gameCv"></canvas>
+        <div class="game-overlay" id="gameOv">${startOverlayHTML()}</div>
+      </div>
+      <div class="game-lb">
+        <h4>🏆 Ranking <span class="lb-note">· op dit toestel</span></h4>
+        <div id="gameLb">${gameLbHTML()}</div>
       </div>
     </div>
   </div>
@@ -1421,33 +1442,84 @@ function refreshDetail(){
 function setSearch(v){ searchQ = v; refreshDetail(); }
 function setStatusF(v){ statusF = v; refreshDetail(); }
 
-/* ---------- cross-sell catcher 🎮 ---------- */
+/* ---------- Tel&Co arcade 🎮 ---------- */
 let G = null, telImg = null;
+let gameSel = localStorage.getItem("tc-game-sel") || "catch";
+const GAME_NAME = {catch:"Cross-sell Catcher", race:"Tel&Co Racer"};
+const GAME_INFO = {
+  catch: "Jij bent de Tel&Co-verkoper! Vang <b>⚡ energie</b> (+10) en <b>Telenet-mannetjes</b> (+25 — vlak na een energie = <b>CROSS-SELL +15</b>). Vang <b>❤️</b> voor een extra leven (max 5), ontwijk 🚪 closed doors en ❌ cancels. Besturen: ← →, muis of vinger.",
+  race: "Stuur de Tel&Co-wagen langs de <b>🚧 werven</b> en pak onderweg <b>⚡ energie</b> (+10), <b>Telenet-mannetjes</b> (+25) en <b>❤️</b> extra levens (max 5). Rijden zelf levert ook punten op en het gaat steeds sneller. Besturen: ← →, muis of vinger."
+};
+
+function startOverlayHTML(){
+  const name = (localStorage.getItem("tc-game-name")||"").replace(/"/g,"&quot;");
+  return `<h3>${GAME_NAME[gameSel]}</h3>
+    <div class="sub">Wie is de beste van het team?</div>
+    <input id="gName" maxlength="14" placeholder="Jouw naam…" value="${name}" onkeydown="if(event.key==='Enter')startGame()">
+    <button class="btn" onclick="startGame()">▶ Start het spel</button>
+    <div class="g-err" id="gErr"></div>`;
+}
+
+function setGameSel(sel){
+  gameSel = sel;
+  localStorage.setItem("tc-game-sel", sel);
+  if(G){ G.run = false; G = null; }
+  document.querySelectorAll(".game-tabs button").forEach(b=>b.classList.toggle("on", b.dataset.g===sel));
+  const info = document.getElementById("gInfo"); if(info) info.innerHTML = GAME_INFO[sel];
+  const ov = document.getElementById("gameOv"); if(ov){ ov.innerHTML = startOverlayHTML(); ov.classList.remove("hide"); }
+  const lb = document.getElementById("gameLb"); if(lb) lb.innerHTML = gameLbHTML();
+  const cv = document.getElementById("gameCv");
+  if(cv && cv.width){ cv.getContext("2d").clearRect(0,0,cv.width,cv.height); }
+  const s = document.getElementById("gScore"), l = document.getElementById("gLives");
+  if(s){ s.textContent = "0"; l.textContent = "❤️❤️❤️"; }
+}
+
+function gameLbHTML(){
+  const lb = JSON.parse(localStorage.getItem("tc-game-lb-"+gameSel) || "[]");
+  if(!lb.length) return '<div class="lb-empty">Nog geen scores — wie zet de eerste neer?</div>';
+  const med = ["🥇","🥈","🥉"];
+  return lb.slice(0,10).map((e,i)=>
+    `<div class="lb-row${i===0?" top":""}"><span class="lb-rank">${med[i]||i+1}</span><span class="lb-name">${e.n}</span><span class="lb-score">${e.s}</span></div>`
+  ).join("");
+}
+
+const clampX = x => Math.max(26, Math.min((G?G.W:100)-26, x));
+const laneW = g => Math.min(118, (g.W-44)/3);
+const laneCX = (g,i) => g.W/2 + (i-1)*laneW(g);
 
 function startGame(){
   const cv = document.getElementById("gameCv");
   if(!cv) return;
+  const inp = document.getElementById("gName");
+  const name = (inp ? inp.value : "").trim().replace(/[<>&"]/g,"").slice(0,14);
+  if(!name){ const err = document.getElementById("gErr"); if(err) err.textContent = "Vul eerst je naam in!"; if(inp) inp.focus(); return; }
+  localStorage.setItem("tc-game-name", name);
   if(!telImg && LOGOS.telenet){ telImg = new Image(); telImg.src = "data:image/png;base64," + LOGOS.telenet; }
-  const ov = document.getElementById("gameOv");
-  ov.classList.add("hide");
+  document.getElementById("gameOv").classList.add("hide");
   const dpr = window.devicePixelRatio || 1;
   const W = cv.clientWidth, H = cv.clientHeight;
   cv.width = W*dpr; cv.height = H*dpr;
   const ctx = cv.getContext("2d");
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  G = {cv,ctx,W,H, px:W/2, tx:W/2, items:[], pops:[], score:0, lives:3,
-       t0:performance.now(), last:0, spawn:600, lastE:0, run:true, kl:false, kr:false};
-  cv.ontouchmove = e=>{ e.preventDefault(); const r=cv.getBoundingClientRect(); G.tx = clampX(e.touches[0].clientX - r.left); };
+  G = {mode:gameSel, cv, ctx, W, H, px:W/2, tx:W/2, lane:1, roadY:0, items:[], pops:[],
+       score:0, lives:3, t0:performance.now(), last:0, spawn:500, lastE:0, run:true, kl:false, kr:false};
+  cv.ontouchmove = e=>{ e.preventDefault(); const r = cv.getBoundingClientRect(); pointTo(e.touches[0].clientX - r.left); };
   updateGameHud();
   requestAnimationFrame(gameLoop);
 }
 
-const clampX = x => Math.max(26, Math.min((G?G.W:100)-26, x));
+function pointTo(x){
+  if(!G || !G.run) return;
+  if(G.mode==="catch") G.tx = clampX(x);
+  else G.lane = x < G.W/2 - laneW(G)/2 ? 0 : x > G.W/2 + laneW(G)/2 ? 2 : 1;
+}
 
 window.addEventListener("keydown", e=>{
   if(!G || !G.run) return;
-  if(e.key==="ArrowLeft"){ G.kl = true; e.preventDefault(); }
-  if(e.key==="ArrowRight"){ G.kr = true; e.preventDefault(); }
+  if(e.key!=="ArrowLeft" && e.key!=="ArrowRight") return;
+  e.preventDefault();
+  if(G.mode==="catch"){ if(e.key==="ArrowLeft") G.kl = true; else G.kr = true; }
+  else if(!e.repeat){ G.lane = Math.max(0, Math.min(2, G.lane + (e.key==="ArrowLeft" ? -1 : 1))); }
 });
 window.addEventListener("keyup", e=>{
   if(!G) return;
@@ -1457,10 +1529,14 @@ window.addEventListener("keyup", e=>{
 document.addEventListener("mousemove", e=>{
   if(!G || !G.run) return;
   const r = G.cv.getBoundingClientRect();
-  if(e.clientY > r.top-50 && e.clientY < r.bottom+50) G.tx = clampX(e.clientX - r.left);
+  if(e.clientY > r.top-50 && e.clientY < r.bottom+50) pointTo(e.clientX - r.left);
 });
 
 function pop(g,x,y,txt,c){ g.pops.push({x,y,txt,c,life:900}); }
+function gainLife(g,x,y){
+  if(g.lives < 5){ g.lives++; pop(g,x,y,"+1 ❤️","#2a8f4a"); }
+  else { g.score += 5; pop(g,x,y,"❤️ vol · +5","#2a8f4a"); }
+}
 
 function gameLoop(t){
   const g = G;
@@ -1468,74 +1544,138 @@ function gameLoop(t){
   if(!g.cv.isConnected){ g.run = false; return; }
   const dt = Math.min(34, t-(g.last||t)); g.last = t;
   const el = (t-g.t0)/1000;
-
-  if(g.kl) g.tx = clampX(g.tx - dt*0.38);
-  if(g.kr) g.tx = clampX(g.tx + dt*0.38);
-  g.px += (g.tx-g.px)*Math.min(1, dt*0.016);
-
-  g.spawn -= dt;
-  if(g.spawn <= 0){
-    g.spawn = Math.max(320, 720 - el*13);
-    const r = Math.random();
-    const type = r<0.42 ? "e" : r<0.68 ? "t" : r<0.88 ? "d" : "x";
-    g.items.push({type, x:26+Math.random()*(g.W-52), y:-30, vy:1.6+el*0.05+Math.random()*0.9});
-  }
-
-  g.items.forEach(it=> it.y += it.vy*dt*0.062);
-  for(const it of g.items){
-    if(!it.dead && it.y > g.H-66 && it.y < g.H-18 && Math.abs(it.x-g.px) < 38){
-      it.dead = true;
-      if(it.type==="e"){ g.score += 10; g.lastE = t; pop(g, it.x, it.y, "+10", "#cf0061"); }
-      else if(it.type==="t"){
-        let pts = 25;
-        if(g.lastE && t-g.lastE < 2500){ pts += 15; pop(g, it.x, it.y-24, "CROSS-SELL +15!", "#d8a200"); }
-        g.score += pts; pop(g, it.x, it.y, "+25", "#b8860b");
-      }
-      else { g.lives--; pop(g, it.x, it.y, "−1 ❤️", "#c0392b"); if(g.lives<=0){ endGame(); } }
-    }
-  }
-  g.items = g.items.filter(it=>!it.dead && it.y < g.H+34);
+  if(g.mode==="catch") stepCatch(g,t,dt,el); else stepRace(g,t,dt,el);
   g.pops.forEach(p=>{ p.y -= dt*0.05; p.life -= dt; });
   g.pops = g.pops.filter(p=>p.life>0);
-
-  drawGame(g);
+  if(g.mode==="catch") drawCatch(g); else drawRace(g);
+  drawPops(g);
   updateGameHud();
   if(g.run) requestAnimationFrame(gameLoop);
 }
 
-function drawGame(g){
+/* --- catcher --- */
+function stepCatch(g,t,dt,el){
+  if(g.kl) g.tx = clampX(g.tx - dt*0.38);
+  if(g.kr) g.tx = clampX(g.tx + dt*0.38);
+  g.px += (g.tx-g.px)*Math.min(1, dt*0.016);
+  g.spawn -= dt;
+  if(g.spawn <= 0){
+    g.spawn = Math.max(320, 720 - el*13);
+    const r = Math.random();
+    const type = r<0.40 ? "e" : r<0.62 ? "t" : r<0.70 ? "h" : r<0.88 ? "d" : "x";
+    g.items.push({type, x:26+Math.random()*(g.W-52), y:-30, vy:1.6+el*0.05+Math.random()*0.9});
+  }
+  g.items.forEach(it=> it.y += it.vy*dt*0.062);
+  for(const it of g.items){
+    if(!it.dead && it.y > g.H-66 && it.y < g.H-18 && Math.abs(it.x-g.px) < 38){
+      it.dead = true;
+      if(it.type==="e"){ g.score += 10; g.lastE = t; pop(g,it.x,it.y,"+10","#cf0061"); }
+      else if(it.type==="t"){
+        let pts = 25;
+        if(g.lastE && t-g.lastE < 2500){ pts += 15; pop(g,it.x,it.y-24,"CROSS-SELL +15!","#d8a200"); }
+        g.score += pts; pop(g,it.x,it.y,"+25","#b8860b");
+      }
+      else if(it.type==="h"){ gainLife(g,it.x,it.y); }
+      else { g.lives--; pop(g,it.x,it.y,"−1 ❤️","#c0392b"); if(g.lives<=0) endGame(); }
+    }
+  }
+  g.items = g.items.filter(it=>!it.dead && it.y < g.H+34);
+}
+
+function drawCatch(g){
   const {ctx,W,H} = g;
   ctx.clearRect(0,0,W,H);
   ctx.strokeStyle = "rgba(124,179,66,.35)"; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(0,H-16); ctx.lineTo(W,H-16); ctx.stroke();
-
-  for(const it of g.items){
-    if(it.type==="t"){
-      if(telImg && telImg.complete) ctx.drawImage(telImg, it.x-19, it.y-19, 38, 38);
-      else { ctx.font = "26px serif"; ctx.textAlign="center"; ctx.fillText("📺", it.x, it.y+9); }
-    }else if(it.type==="e"){
-      ctx.beginPath(); ctx.arc(it.x, it.y, 16, 0, 7);
-      ctx.fillStyle = "#cf0061"; ctx.fill();
-      ctx.font = "16px serif"; ctx.textAlign = "center"; ctx.fillText("⚡", it.x, it.y+6);
-    }else{
-      ctx.font = "26px serif"; ctx.textAlign = "center";
-      ctx.fillText(it.type==="d" ? "🚪" : "❌", it.x, it.y+9);
-    }
-  }
-
-  // de verkoper
+  g.items.forEach(it=>drawItem(g,it));
   const px = g.px, py = H-16;
   ctx.fillStyle = "#558b2f";
-  ctx.beginPath(); ctx.roundRect(px-15, py-32, 30, 28, 8); ctx.fill();   // lijf
+  ctx.beginPath(); ctx.roundRect(px-15, py-32, 30, 28, 8); ctx.fill();
   ctx.fillStyle = "#f5c9a0";
-  ctx.beginPath(); ctx.arc(px, py-40, 10, 0, 7); ctx.fill();             // hoofd
+  ctx.beginPath(); ctx.arc(px, py-40, 10, 0, 7); ctx.fill();
   ctx.fillStyle = "#1a1f1a";
-  ctx.beginPath(); ctx.arc(px-3.5, py-42, 1.6, 0, 7); ctx.arc(px+3.5, py-42, 1.6, 0, 7); ctx.fill(); // ogen
+  ctx.beginPath(); ctx.arc(px-3.5, py-42, 1.6, 0, 7); ctx.arc(px+3.5, py-42, 1.6, 0, 7); ctx.fill();
   ctx.fillStyle = "#ffc20e";
-  ctx.beginPath(); ctx.roundRect(px-2.5, py-30, 5, 13, 2); ctx.fill();   // telenet-das
+  ctx.beginPath(); ctx.roundRect(px-2.5, py-30, 5, 13, 2); ctx.fill();
   ctx.strokeStyle = "#1a1f1a"; ctx.lineWidth = 1.4;
-  ctx.beginPath(); ctx.arc(px, py-38.5, 4.5, .25*Math.PI, .75*Math.PI); ctx.stroke(); // glimlach
+  ctx.beginPath(); ctx.arc(px, py-38.5, 4.5, .25*Math.PI, .75*Math.PI); ctx.stroke();
+}
 
+/* --- racer --- */
+function stepRace(g,t,dt,el){
+  const speed = 2.2 + el*0.07;
+  g.roadY = (g.roadY + speed*dt*0.06) % 40;
+  g.px += (laneCX(g,g.lane)-g.px)*Math.min(1, dt*0.02);
+  g.score += dt*0.003;
+  g.spawn -= dt;
+  if(g.spawn <= 0){
+    g.spawn = Math.max(300, 680 - el*15);
+    const r = Math.random();
+    const type = r<0.30 ? "e" : r<0.48 ? "t" : r<0.56 ? "h" : "c";
+    g.items.push({type, lane:Math.floor(Math.random()*3), y:-34, x:0});
+  }
+  g.items.forEach(it=>{ it.y += speed*dt*0.06; it.x = laneCX(g,it.lane); });
+  const carY = g.H-58;
+  for(const it of g.items){
+    if(!it.dead && Math.abs(it.y-carY) < 34 && it.lane===g.lane){
+      it.dead = true;
+      if(it.type==="e"){ g.score += 10; pop(g,it.x,it.y,"+10","#cf0061"); }
+      else if(it.type==="t"){ g.score += 25; pop(g,it.x,it.y,"+25","#b8860b"); }
+      else if(it.type==="h"){ gainLife(g,it.x,it.y); }
+      else { g.lives--; pop(g,it.x,it.y,"💥 −1 ❤️","#c0392b"); if(g.lives<=0) endGame(); }
+    }
+  }
+  g.items = g.items.filter(it=>!it.dead && it.y < g.H+40);
+}
+
+function drawRace(g){
+  const {ctx,W,H} = g;
+  ctx.clearRect(0,0,W,H);
+  const lw = laneW(g), roadW = lw*3+26, rx = W/2-roadW/2;
+  ctx.fillStyle = "rgba(42,48,42,.92)";
+  ctx.fillRect(rx, 0, roadW, H);
+  ctx.fillStyle = "#ffc20e";
+  ctx.fillRect(rx, 0, 4, H); ctx.fillRect(rx+roadW-4, 0, 4, H);
+  ctx.fillStyle = "rgba(255,255,255,.7)";
+  for(const bx of [W/2-lw/2, W/2+lw/2]){
+    for(let y = -40+g.roadY; y < H; y += 40) ctx.fillRect(bx-2, y, 4, 22);
+  }
+  g.items.forEach(it=>drawItem(g,it));
+  const px = g.px, py = H-58;
+  ctx.fillStyle = "#1a1a1a";
+  ctx.fillRect(px-20, py-18, 4, 12); ctx.fillRect(px+16, py-18, 4, 12);
+  ctx.fillRect(px-20, py+8, 4, 12); ctx.fillRect(px+16, py+8, 4, 12);
+  ctx.fillStyle = "#558b2f";
+  ctx.beginPath(); ctx.roundRect(px-17, py-28, 34, 56, 9); ctx.fill();
+  ctx.fillStyle = "#7cb342";
+  ctx.beginPath(); ctx.roundRect(px-13, py-10, 26, 24, 5); ctx.fill();
+  ctx.fillStyle = "#cfe7ff";
+  ctx.beginPath(); ctx.roundRect(px-12, py-22, 24, 9, 3); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(px-12, py+16, 24, 7, 3); ctx.fill();
+  ctx.fillStyle = "#ffc20e";
+  ctx.fillRect(px-15, py-31, 8, 4); ctx.fillRect(px+7, py-31, 8, 4);
+}
+
+/* --- gedeeld --- */
+function drawItem(g,it){
+  const {ctx} = g;
+  if(it.type==="t"){
+    if(telImg && telImg.complete) ctx.drawImage(telImg, it.x-19, it.y-19, 38, 38);
+    else { ctx.font = "26px serif"; ctx.textAlign = "center"; ctx.fillText("📺", it.x, it.y+9); }
+  }else if(it.type==="e"){
+    ctx.beginPath(); ctx.arc(it.x, it.y, 16, 0, 7);
+    ctx.fillStyle = "#cf0061"; ctx.fill();
+    ctx.font = "16px serif"; ctx.textAlign = "center"; ctx.fillText("⚡", it.x, it.y+6);
+  }else if(it.type==="h"){
+    ctx.font = "24px serif"; ctx.textAlign = "center"; ctx.fillText("❤️", it.x, it.y+8);
+  }else{
+    ctx.font = "26px serif"; ctx.textAlign = "center";
+    ctx.fillText(it.type==="d" ? "🚪" : it.type==="x" ? "❌" : "🚧", it.x, it.y+9);
+  }
+}
+
+function drawPops(g){
+  const {ctx} = g;
   for(const p of g.pops){
     ctx.globalAlpha = Math.min(1, p.life/600);
     ctx.font = "bold 14px 'JetBrains Mono',monospace"; ctx.textAlign = "center";
@@ -1546,18 +1686,27 @@ function drawGame(g){
 
 function updateGameHud(){
   const s = document.getElementById("gScore"), l = document.getElementById("gLives");
-  if(s && G){ s.textContent = G.score; l.textContent = G.lives; }
+  if(s && G){ s.textContent = Math.floor(G.score); l.textContent = "❤️".repeat(Math.max(0,G.lives)) || "—"; }
 }
 
 function endGame(){
   const g = G; g.run = false;
-  const hs = Math.max(g.score, +(localStorage.getItem("tc-game-hs")||0));
-  localStorage.setItem("tc-game-hs", hs);
-  const h = document.getElementById("gHigh"); if(h) h.textContent = hs;
+  const name = localStorage.getItem("tc-game-name") || "Anoniem";
+  const score = Math.floor(g.score);
+  const key = "tc-game-lb-" + g.mode;
+  const lb = JSON.parse(localStorage.getItem(key) || "[]");
+  lb.push({n:name, s:score});
+  lb.sort((a,b)=>b.s-a.s);
+  if(lb.length > 10) lb.length = 10;
+  localStorage.setItem(key, JSON.stringify(lb));
+  const rank = lb.findIndex(e=>e.n===name && e.s===score) + 1;
+  const lbEl = document.getElementById("gameLb"); if(lbEl) lbEl.innerHTML = gameLbHTML();
   const ov = document.getElementById("gameOv");
-  ov.innerHTML = `<h3>${g.score >= hs && g.score>0 ? "🏆 Nieuw record!" : "Game over!"}</h3>
-    <div class="sub">${g.score} punten · record ${hs}</div>
-    <button class="btn" onclick="startGame()">↻ Speel opnieuw</button>`;
+  ov.innerHTML = `<h3>${rank===1 ? "🏆 Nieuwe nummer 1!" : "Game over!"}</h3>
+    <div class="sub">${name} · ${score} punten${rank ? " · plek #"+rank+" in de ranking" : " · net buiten de top 10"}</div>
+    <input id="gName" maxlength="14" value="${name.replace(/"/g,"&quot;")}" onkeydown="if(event.key==='Enter')startGame()">
+    <button class="btn" onclick="startGame()">↻ Speel opnieuw</button>
+    <div class="g-err" id="gErr"></div>`;
   ov.classList.remove("hide");
 }
 
