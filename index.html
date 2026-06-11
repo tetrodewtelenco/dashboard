@@ -72,9 +72,9 @@ body{font-family:var(--fb);background:var(--bg);color:var(--ink);font-size:14px;
 /* ===== animated background ===== */
 .bg-fx{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
 .blob{position:absolute;border-radius:50%;opacity:.65;will-change:transform}
-.blob.a{width:760px;height:760px;background:radial-gradient(circle,var(--bg-grad-a) 0%,transparent 65%);top:-280px;left:-220px;animation:drift-a 26s ease-in-out infinite alternate}
-.blob.b{width:680px;height:680px;background:radial-gradient(circle,var(--bg-grad-b) 0%,transparent 65%);top:25%;right:-260px;animation:drift-b 32s ease-in-out infinite alternate}
-.blob.c{width:620px;height:620px;background:radial-gradient(circle,var(--bg-grad-a) 0%,transparent 65%);bottom:-260px;left:30%;animation:drift-c 38s ease-in-out infinite alternate}
+.blob.a{width:760px;height:760px;background:radial-gradient(circle,var(--bg-grad-a) 0%,transparent 65%);top:-280px;left:-220px;animation:drift-a 48s ease-in-out infinite alternate}
+.blob.b{width:680px;height:680px;background:radial-gradient(circle,var(--bg-grad-b) 0%,transparent 65%);top:25%;right:-260px;animation:drift-b 56s ease-in-out infinite alternate}
+.blob.c{width:620px;height:620px;background:radial-gradient(circle,var(--bg-grad-a) 0%,transparent 65%);bottom:-260px;left:30%;animation:drift-c 64s ease-in-out infinite alternate}
 @keyframes drift-a{to{transform:translate(120px,90px) scale(1.15)}}
 @keyframes drift-b{to{transform:translate(-100px,-120px) scale(.9)}}
 @keyframes drift-c{to{transform:translate(-140px,-60px) scale(1.2)}}
@@ -83,8 +83,8 @@ body{font-family:var(--fb);background:var(--bg);color:var(--ink);font-size:14px;
 /* ===== topbar ===== */
 .topbar{
   background:var(--card-glass);
-  backdrop-filter:blur(16px) saturate(1.4);
-  -webkit-backdrop-filter:blur(16px) saturate(1.4);
+  backdrop-filter:blur(9px);
+  -webkit-backdrop-filter:blur(9px);
   border-bottom:1px solid var(--line);
   padding:12px 26px;display:flex;align-items:center;gap:18px;
   position:sticky;top:0;z-index:40;flex-wrap:wrap;
@@ -119,19 +119,19 @@ body{font-family:var(--fb);background:var(--bg);color:var(--ink);font-size:14px;
 .icon-btn svg{width:17px;height:17px}
 
 /* ===== layout ===== */
-.wrap{max-width:1300px;margin:0 auto;padding:30px 26px 70px}
+.wrap{max-width:1600px;margin:0 auto;padding:24px 26px 56px}
 
 /* ===== hero ===== */
-.hero{margin:6px 0 26px}
-.hero h1{font-family:var(--fd);font-weight:800;font-size:clamp(26px,4.2vw,44px);letter-spacing:-.025em;line-height:1.05}
+.hero{margin:2px 0 18px;display:flex;align-items:flex-end;gap:30px;flex-wrap:wrap}
+.hero h1{font-family:var(--fd);font-weight:800;font-size:clamp(22px,3vw,34px);letter-spacing:-.025em;line-height:1.08}
 .hero h1 .energie{background:linear-gradient(100deg,var(--green) 0%,var(--green-deep) 70%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .hero h1 .telenet-w{position:relative;white-space:nowrap}
 .hero h1 .telenet-w::after{content:"";position:absolute;left:0;right:0;bottom:4px;height:.32em;background:var(--telenet);z-index:-1;border-radius:3px;transform:scaleX(0);transform-origin:left;animation:underline 1s .5s cubic-bezier(.22,1,.36,1) forwards}
 @keyframes underline{to{transform:scaleX(1)}}
-.hero p{color:var(--ink-3);font-size:15px;margin-top:8px;max-width:640px}
+.hero p{color:var(--ink-3);font-size:13.5px;margin-top:4px;max-width:560px;flex:1;min-width:260px;padding-bottom:4px}
 
 /* ===== filters ===== */
-.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:24px;position:sticky;top:72px;z-index:30;background:var(--card-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:16px;padding:10px 14px;box-shadow:var(--shadow)}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px;position:sticky;top:72px;z-index:30;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 14px;box-shadow:var(--shadow)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{padding:7px 16px;border-radius:99px;border:1px solid var(--line);background:var(--chip-bg);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;font-family:var(--fb);transition:all .2s cubic-bezier(.22,1,.36,1)}
 .chip:hover{border-color:var(--green);transform:translateY(-1px)}
@@ -140,7 +140,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--ink);font-size:14px;
 .filters .spacer{flex:1}
 
 /* ===== sections / reveal ===== */
-.section-title{font-family:var(--fd);font-weight:700;font-size:17px;margin:38px 0 16px;display:flex;align-items:center;gap:10px}
+.section-title{font-family:var(--fd);font-weight:700;font-size:16px;margin:24px 0 12px;display:flex;align-items:center;gap:10px}
 .section-title .num{font-family:var(--fm);font-size:11px;color:var(--ink-4);background:var(--soft);padding:3px 9px;border-radius:99px}
 .section-title::after{content:"";flex:1;height:1px;background:var(--line)}
 .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1)}
@@ -179,7 +179,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--ink);font-size:14px;
 .chart-card:hover{box-shadow:var(--shadow-lg)}
 .chart-card h3{font-family:var(--fd);font-weight:700;font-size:14.5px;margin-bottom:3px}
 .chart-card .hint{font-size:12px;color:var(--ink-3);margin-bottom:14px}
-.chart-box{position:relative;height:280px}
+.chart-box{position:relative;height:235px}
 @media(max-width:900px){.charts,.charts-row2{grid-template-columns:1fr}}
 
 /* ===== leveranciers ===== */
@@ -218,9 +218,9 @@ tr:nth-child(3) td .rank{background:#e8c39e;color:#6d4c1f}
 .pill.n{background:var(--soft);color:var(--ink-3)}
 
 /* ===== live ticker ===== */
-.ticker{overflow:hidden;border-bottom:1px solid var(--line);background:var(--card-glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:stretch;height:36px}
+.ticker{overflow:hidden;border-bottom:1px solid var(--line);background:var(--card);display:flex;align-items:stretch;height:36px}
 .ticker .tag{flex-shrink:0;display:flex;align-items:center;gap:7px;padding:0 16px;font-family:var(--fm);font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--green-deep);border-right:1px solid var(--line);background:var(--green-soft)}
-.ticker-view{flex:1;overflow:hidden;display:flex;align-items:center;mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+.ticker-view{flex:1;overflow:hidden;display:flex;align-items:center}
 .ticker-track{display:flex;width:max-content;animation:tick 45s linear infinite}
 .ticker:hover .ticker-track{animation-play-state:paused}
 .tick-item{display:flex;align-items:center;gap:8px;padding:0 20px;font-size:11.5px;letter-spacing:.04em;color:var(--ink-3);white-space:nowrap;font-family:var(--fm);text-transform:uppercase}
@@ -239,21 +239,23 @@ tr:nth-child(3) td .rank{background:#e8c39e;color:#6d4c1f}
 /* ===== roadmap ===== */
 .road-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px 28px 10px;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .road-card::after{content:"";position:absolute;top:-40%;right:-15%;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--green) 9%,transparent) 0%,transparent 70%);pointer-events:none}
-.road-hint{font-size:12px;color:var(--ink-3);margin:-6px 0 22px}
-.roadmap{position:relative;margin-left:8px;padding-left:36px}
-.roadmap::before{content:"";position:absolute;left:10px;top:8px;bottom:14px;width:3px;border-radius:3px;background:var(--soft)}
-.road-line{position:absolute;left:10px;top:8px;width:3px;border-radius:3px;background:linear-gradient(180deg,var(--green) 0%,var(--telenet) 100%);height:0;transition:height 1.8s .2s cubic-bezier(.22,1,.36,1);box-shadow:0 0 12px color-mix(in srgb,var(--green) 45%,transparent)}
-.ms{position:relative;padding:0 0 28px 10px}
-.ms .node{position:absolute;left:-36px;top:1px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:2.5px solid var(--ink-4);z-index:1;transition:transform .3s}
-.ms:hover .node{transform:scale(1.2)}
-.ms.done .node{border-color:var(--green);background:var(--green);color:#fff;animation:nodepulse 3.2s ease-in-out infinite}
+.road-hint{font-size:12px;color:var(--ink-3);margin:-4px 0 14px}
+.roadmap{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(185px,1fr);overflow-x:auto;padding:4px 2px 12px;scroll-snap-type:x proximity}
+.ms{position:relative;padding:34px 18px 0 2px;scroll-snap-align:start}
+.ms::before{content:"";position:absolute;top:10px;left:0;right:0;height:3px;background:var(--soft)}
+.ms.done::before{background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 55%,var(--telenet)))}
+.ms:last-child::before{right:14px;border-radius:0 3px 3px 0}
+.ms .node{position:absolute;left:0;top:0;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:2.5px solid var(--ink-4);z-index:1;transition:transform .3s}
+.ms:hover .node{transform:scale(1.18)}
+.ms.done .node{border-color:var(--green);background:var(--green);color:#fff}
+.ms.done .node::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--green);opacity:0;animation:ring 3s ease-out infinite}
+@keyframes ring{0%{transform:scale(.55);opacity:.85}70%,100%{transform:scale(1.35);opacity:0}}
 .ms .node svg{width:11px;height:11px}
-@keyframes nodepulse{0%,100%{box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 25%,transparent)}50%{box-shadow:0 0 0 9px color-mix(in srgb,var(--green) 8%,transparent)}}
-.ms .when{font-family:var(--fm);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green-deep);margin-bottom:2px}
+.ms .when{font-family:var(--fm);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green-deep);margin-bottom:2px}
 .ms.todo .when{color:var(--ink-4)}
-.ms .ttl{font-family:var(--fd);font-weight:700;font-size:16px;letter-spacing:-.01em}
-.ms .d{font-size:12.5px;color:var(--ink-3);max-width:560px}
-.ms .prog{margin-top:10px;max-width:380px;display:flex;align-items:center;gap:12px}
+.ms .ttl{font-family:var(--fd);font-weight:700;font-size:14px;letter-spacing:-.01em}
+.ms .d{font-size:11.5px;color:var(--ink-3)}
+.ms .prog{margin-top:9px;max-width:170px;display:flex;align-items:center;gap:9px}
 .ms .prog .track{flex:1;height:7px;background:var(--soft);border-radius:99px;overflow:hidden}
 .ms .prog .fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--green),var(--telenet));transition:width 1.3s .4s cubic-bezier(.22,1,.36,1)}
 .ms .prog .pv{font-family:var(--fm);font-size:11px;font-weight:700;color:var(--ink-2);white-space:nowrap}
@@ -290,7 +292,10 @@ tr:nth-child(3) td .rank{background:#e8c39e;color:#6d4c1f}
 .minfive input{accent-color:var(--green)}
 
 /* ===== sales funnel ===== */
-.funnel-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.funnel-grid{display:grid;grid-template-columns:1.8fr 1fr;gap:14px;align-items:stretch}
+.suppliers-col{display:grid;gap:14px;align-content:start}
+@media(max-width:1000px){.funnel-grid{grid-template-columns:1fr}}
+.funnel-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow)}
 .fstage{display:grid;grid-template-columns:215px 1fr;gap:18px;align-items:center;padding:14px 0;border-bottom:1px dashed var(--line)}
 .fstage:last-child{border-bottom:none}
 .fstage .meta .t{font-weight:700;font-family:var(--fd);font-size:14.5px}
@@ -333,7 +338,7 @@ tr:nth-child(3) td .rank{background:#e8c39e;color:#6d4c1f}
 .loader{width:40px;height:40px;border:4px solid var(--soft);border-top-color:var(--green);border-radius:50%;animation:rot .9s linear infinite;margin:0 auto 18px}
 
 /* ===== footer ===== */
-.defs{margin-top:44px;background:var(--soft);border-radius:var(--radius);padding:20px 24px;font-size:12.5px;color:var(--ink-3);line-height:1.7}
+.defs{margin-top:26px;background:var(--soft);border-radius:var(--radius);padding:18px 22px;font-size:12px;color:var(--ink-3);line-height:1.65}
 .defs b{color:var(--ink-2)}
 .defs h4{font-family:var(--fd);font-size:13px;color:var(--ink-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
 .foot{margin-top:18px;text-align:center;font-size:11.5px;color:var(--ink-4)}
@@ -815,8 +820,28 @@ function render(){
 
   ${SEC_END}
 
-  ${secOpen("funnel","02","Sales funnel")}
-  ${funnelHTML(rows)}
+  ${secOpen("funnel","02","Sales funnel & energie-leveranciers")}
+  <div class="funnel-grid">
+    ${funnelHTML(rows)}
+    <div class="suppliers-col">
+      <div class="sup-card reveal" style="--sc:var(--eneco)">
+        <div class="sup-logo"><img src="data:image/png;base64,${LOGOS.eneco||""}" alt="Eneco"></div>
+        <div class="sup-info">
+          <div class="n" data-count="${eneco.n}" data-fmt="int">0</div>
+          <div class="d">energie GO's · ${fmtEUR(eneco.omzet)} omzet</div>
+        </div>
+        <div class="sup-share">${fmtPct(eneco.n, energieGo)}</div>
+      </div>
+      <div class="sup-card reveal" style="--sc:var(--elindus)">
+        <div class="sup-logo"><img src="data:image/png;base64,${LOGOS.elindus||""}" alt="Elindus"></div>
+        <div class="sup-info">
+          <div class="n" data-count="${elindus.n}" data-fmt="int">0</div>
+          <div class="d">energie GO's · ${fmtEUR(elindus.omzet)} omzet</div>
+        </div>
+        <div class="sup-share">${fmtPct(elindus.n, energieGo)}</div>
+      </div>
+    </div>
+  </div>
   ${SEC_END}
 
   ${secOpen("verloop","03","Evolutie over tijd")}
@@ -844,40 +869,18 @@ function render(){
     <div class="chart-card reveal">
       <h3>Omzet per ${chartGran}</h3>
       <div class="hint">Op datum van de afspraak</div>
-      <div class="chart-box" style="height:230px"><canvas id="chOmzet"></canvas></div>
+      <div class="chart-box" style="height:205px"><canvas id="chOmzet"></canvas></div>
     </div>
     <div class="chart-card reveal">
       <h3>Conversie per ${chartGran}</h3>
       <div class="hint">GO's t.o.v. netto afspraken</div>
-      <div class="chart-box" style="height:230px"><canvas id="chConv"></canvas></div>
+      <div class="chart-box" style="height:205px"><canvas id="chConv"></canvas></div>
     </div>
   </div>
 
   ${SEC_END}
 
-  ${secOpen("lev","04","Energie-leveranciers")}
-  <div class="suppliers">
-    <div class="sup-card reveal" style="--sc:var(--eneco)">
-      <div class="sup-logo"><img src="data:image/png;base64,${LOGOS.eneco||""}" alt="Eneco"></div>
-      <div class="sup-info">
-        <div class="n" data-count="${eneco.n}" data-fmt="int">0</div>
-        <div class="d">energie GO's · ${fmtEUR(eneco.omzet)} omzet</div>
-      </div>
-      <div class="sup-share">${fmtPct(eneco.n, energieGo)}</div>
-    </div>
-    <div class="sup-card reveal" style="--sc:var(--elindus)">
-      <div class="sup-logo"><img src="data:image/png;base64,${LOGOS.elindus||""}" alt="Elindus"></div>
-      <div class="sup-info">
-        <div class="n" data-count="${elindus.n}" data-fmt="int">0</div>
-        <div class="d">energie GO's · ${fmtEUR(elindus.omzet)} omzet</div>
-      </div>
-      <div class="sup-share">${fmtPct(elindus.n, energieGo)}</div>
-    </div>
-  </div>
-
-  ${SEC_END}
-
-  ${secOpen("road","05","Project roadmap")}
+  ${secOpen("road","04","Project roadmap")}
   <div class="road-card reveal">
     <div class="road-hint">Mijlpalen van het volledige project — automatisch berekend uit de live data (filters hebben hier geen invloed).</div>
     ${roadmapHTML()}
@@ -885,7 +888,7 @@ function render(){
 
   ${SEC_END}
 
-  ${secOpen("verk","06","Verkopers")}
+  ${secOpen("verk","05","Verkopers")}
   <div class="sec-tools">
     <span class="tool-label">Sorteer op</span>
     <div class="gran">
@@ -899,15 +902,15 @@ function render(){
   <div class="table-card reveal">${salesTable(rows)}</div>
   ${SEC_END}
 
-  ${secOpen("reco","07","Aanbevolen toewijzing")}
+  ${secOpen("reco","06","Aanbevolen toewijzing")}
   ${recoHTML(rows)}
   ${SEC_END}
 
-  ${secOpen("plan","08","Planners")}
+  ${secOpen("plan","07","Planners")}
   <div class="table-card reveal">${plannerTable(rows)}</div>
   ${SEC_END}
 
-  ${secOpen("detail","09","Afspraken detail")}
+  ${secOpen("detail","08","Afspraken detail")}
   <div class="detail-tools">
     <input type="search" placeholder="Zoek op klant, verkoper of planner…" value="${searchQ.replace(/"/g,"&quot;")}" oninput="setSearch(this.value)">
     <select onchange="setStatusF(this.value)">
@@ -1170,10 +1173,15 @@ function buildTicker(){
 /* ---------- spotlight hover ---------- */
 function spotlight(scope){
   scope.querySelectorAll(".kpi").forEach(card=>{
+    let raf = 0;
     card.addEventListener("mousemove", e=>{
-      const r = card.getBoundingClientRect();
-      card.style.setProperty("--mx", (e.clientX-r.left)+"px");
-      card.style.setProperty("--my", (e.clientY-r.top)+"px");
+      if(raf) return;
+      raf = requestAnimationFrame(()=>{
+        raf = 0;
+        const r = card.getBoundingClientRect();
+        card.style.setProperty("--mx", (e.clientX-r.left)+"px");
+        card.style.setProperty("--my", (e.clientY-r.top)+"px");
+      });
     });
   });
 }
@@ -1203,11 +1211,9 @@ function roadmapHTML(){
     {date: nthDate(r=>isNetto(r),1000), title:"1.000 netto afspraken", desc:"Duizend keer effectief bij de klant binnen geweest.", prog:[netto,1000], fmt:v=>Math.round(v).toLocaleString("nl-BE")},
     {date: omzetDate(100000), title:"€ 100.000 omzet", desc:"De ton is vol. 🎉", prog:[omzetTot,100000], fmt:eur}
   ];
-  const doneCount = defs.filter(m=>m.date).length;
-  const lineH = defs.length>1 ? Math.max(0, (doneCount-0.5) / defs.length * 100) : 0;
   const check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
-  return `<div class="roadmap"><div class="road-line" data-h="${lineH}"></div>` +
+  return `<div class="roadmap">` +
     defs.map(m=>{
       if(m.date){
         return `<div class="ms done reveal">
