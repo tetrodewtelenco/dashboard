@@ -331,6 +331,18 @@ tr:nth-child(3) td .rank{background:#e8c39e;color:#6d4c1f}
 .pill.o{background:#fdeedd;color:#b35c11}
 .pill.p{background:#fbe3f0;color:#b00063}
 
+/* ===== cross-sell catcher ===== */
+.game-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.game-top{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.game-info{font-size:12.5px;color:var(--ink-3);max-width:560px}
+.game-stats{font-family:var(--fm);font-size:13px;font-weight:700;color:var(--ink-2)}
+.game-wrap{position:relative;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--green-soft) 50%,var(--card)) 0%,var(--card) 80%);border:1px solid var(--line)}
+#gameCv{display:block;width:100%;height:340px;touch-action:none}
+.game-overlay{position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 55%,transparent);text-align:center;padding:20px}
+.game-overlay.hide{display:none}
+.game-overlay h3{font-family:var(--fd);font-weight:800;font-size:24px}
+.game-overlay .sub{font-size:13.5px;color:var(--ink-2);font-family:var(--fm)}
+
 /* ===== states ===== */
 .state{max-width:560px;margin:90px auto;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:48px 36px;box-shadow:var(--shadow)}
 .state h2{font-family:var(--fd);font-weight:800;font-size:24px;margin-bottom:10px}
@@ -394,6 +406,10 @@ tr:nth-child(3) td .rank{background:#e8c39e;color:#6d4c1f}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>
       Vernieuwen
     </button>
+    <button class="icon-btn" onclick="document.getElementById('csvFile').click()" title="CSV handmatig laden (als live ophalen niet lukt)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </button>
+    <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none" onchange="if(this.files[0]){handleCSVFile(this.files[0]);this.value=''}">
   </div>
 </div>
 
@@ -585,6 +601,36 @@ async function loadData(){
     const res = await fetch(CSV_URL + "&t=" + Date.now(), {cache:"no-store"});
     if(!res.ok) throw new Error("HTTP " + res.status);
     const text = await res.text();
+    ingestCSV(text);
+    document.getElementById("updated").innerHTML =
+      "bijgewerkt <b>" + new Date().toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"}) + "</b>";
+  }catch(e){
+    document.getElementById("app").innerHTML =
+      '<div class="state"><h2>Kon de data niet live ophalen</h2>' +
+      '<p>Controleer je internetverbinding en of de Google Sheet nog gepubliceerd is — of laad de cijfers handmatig via een CSV-bestand (Google Sheet → Bestand → Downloaden → CSV).<br><span style="font-family:var(--fm);font-size:11px">' + e.message + '</span></p>' +
+      '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+      '<button class="btn" onclick="loadData()">↻ Opnieuw proberen</button>' +
+      '<button class="btn" style="background:var(--green-deep)" onclick="document.getElementById(\'csvFile\').click()">📄 CSV handmatig laden</button>' +
+      '</div></div>';
+  }finally{
+    btn.disabled = false; btn.classList.remove("spin");
+  }
+}
+
+function handleCSVFile(file){
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      ingestCSV(e.target.result);
+      document.getElementById("updated").innerHTML = "handmatig geladen · <b>" + file.name + "</b>";
+    }catch(err){
+      alert("Kon dit bestand niet lezen als dashboard-CSV: " + err.message);
+    }
+  };
+  reader.readAsText(file, "utf-8");
+}
+
+function ingestCSV(text){
     const grid = parseCSV(text);
     const header = grid[0].map(h => h.trim().toUpperCase());
     const idx = {
@@ -598,7 +644,7 @@ async function loadData(){
       telenetGo: header.findIndex(h => h.includes("TELENET GO")),
       omzet: header.findIndex(h => h.includes("OMZET"))
     };
-    allRows = grid.slice(1)
+    const parsed = grid.slice(1)
       .filter(r => r.some(c => c && c.trim()))
       .map(r => {
         const date = parseDate(r[idx.datum]);
@@ -616,17 +662,9 @@ async function loadData(){
         };
       })
       .filter(r => r.klant || r.status !== "GEPLAND");
-    document.getElementById("updated").innerHTML =
-      "bijgewerkt <b>" + new Date().toLocaleTimeString("nl-BE",{hour:"2-digit",minute:"2-digit"}) + "</b>";
+    if(!parsed.length) throw new Error("Geen rijen gevonden in dit bestand.");
+    allRows = parsed;
     render();
-  }catch(e){
-    document.getElementById("app").innerHTML =
-      '<div class="state"><h2>Kon de data niet ophalen</h2>' +
-      '<p>Controleer je internetverbinding en of de Google Sheet nog gepubliceerd is.<br><span style="font-family:var(--fm);font-size:11px">' + e.message + '</span></p>' +
-      '<button class="btn" onclick="loadData()">Opnieuw proberen</button></div>';
-  }finally{
-    btn.disabled = false; btn.classList.remove("spin");
-  }
 }
 
 /* ---------- helpers ---------- */
@@ -925,6 +963,23 @@ function render(){
     </table>
   </div>
   <div class="dcount" id="detailCount">${detailCountText()}</div>
+  ${SEC_END}
+
+  ${secOpen("game","09","Pauze · Cross-sell Catcher 🎮")}
+  <div class="game-card reveal">
+    <div class="game-top">
+      <div class="game-info">Jij bent de Tel&amp;Co-verkoper! Vang <b>⚡ energie</b> (+10) en <b>Telenet-mannetjes</b> (+25 — vang ze vlak na een energie voor de <b>CROSS-SELL bonus</b>), en ontwijk 🚪 closed doors en ❌ cancels. Besturen met ←&nbsp;→, muis of vinger.</div>
+      <div class="game-stats"><span id="gScore">0</span> ptn · ❤️ <span id="gLives">3</span> · record <b id="gHigh">${localStorage.getItem("tc-game-hs")||0}</b></div>
+    </div>
+    <div class="game-wrap">
+      <canvas id="gameCv"></canvas>
+      <div class="game-overlay" id="gameOv">
+        <h3>Cross-sell Catcher</h3>
+        <div class="sub">Hoeveel omzet haal jij binnen?</div>
+        <button class="btn" onclick="startGame()">▶ Start het spel</button>
+      </div>
+    </div>
+  </div>
   ${SEC_END}
 
   <div class="defs reveal">
@@ -1365,6 +1420,146 @@ function refreshDetail(){
 }
 function setSearch(v){ searchQ = v; refreshDetail(); }
 function setStatusF(v){ statusF = v; refreshDetail(); }
+
+/* ---------- cross-sell catcher 🎮 ---------- */
+let G = null, telImg = null;
+
+function startGame(){
+  const cv = document.getElementById("gameCv");
+  if(!cv) return;
+  if(!telImg && LOGOS.telenet){ telImg = new Image(); telImg.src = "data:image/png;base64," + LOGOS.telenet; }
+  const ov = document.getElementById("gameOv");
+  ov.classList.add("hide");
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = W*dpr; cv.height = H*dpr;
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  G = {cv,ctx,W,H, px:W/2, tx:W/2, items:[], pops:[], score:0, lives:3,
+       t0:performance.now(), last:0, spawn:600, lastE:0, run:true, kl:false, kr:false};
+  cv.ontouchmove = e=>{ e.preventDefault(); const r=cv.getBoundingClientRect(); G.tx = clampX(e.touches[0].clientX - r.left); };
+  updateGameHud();
+  requestAnimationFrame(gameLoop);
+}
+
+const clampX = x => Math.max(26, Math.min((G?G.W:100)-26, x));
+
+window.addEventListener("keydown", e=>{
+  if(!G || !G.run) return;
+  if(e.key==="ArrowLeft"){ G.kl = true; e.preventDefault(); }
+  if(e.key==="ArrowRight"){ G.kr = true; e.preventDefault(); }
+});
+window.addEventListener("keyup", e=>{
+  if(!G) return;
+  if(e.key==="ArrowLeft") G.kl = false;
+  if(e.key==="ArrowRight") G.kr = false;
+});
+document.addEventListener("mousemove", e=>{
+  if(!G || !G.run) return;
+  const r = G.cv.getBoundingClientRect();
+  if(e.clientY > r.top-50 && e.clientY < r.bottom+50) G.tx = clampX(e.clientX - r.left);
+});
+
+function pop(g,x,y,txt,c){ g.pops.push({x,y,txt,c,life:900}); }
+
+function gameLoop(t){
+  const g = G;
+  if(!g || !g.run) return;
+  if(!g.cv.isConnected){ g.run = false; return; }
+  const dt = Math.min(34, t-(g.last||t)); g.last = t;
+  const el = (t-g.t0)/1000;
+
+  if(g.kl) g.tx = clampX(g.tx - dt*0.38);
+  if(g.kr) g.tx = clampX(g.tx + dt*0.38);
+  g.px += (g.tx-g.px)*Math.min(1, dt*0.016);
+
+  g.spawn -= dt;
+  if(g.spawn <= 0){
+    g.spawn = Math.max(320, 720 - el*13);
+    const r = Math.random();
+    const type = r<0.42 ? "e" : r<0.68 ? "t" : r<0.88 ? "d" : "x";
+    g.items.push({type, x:26+Math.random()*(g.W-52), y:-30, vy:1.6+el*0.05+Math.random()*0.9});
+  }
+
+  g.items.forEach(it=> it.y += it.vy*dt*0.062);
+  for(const it of g.items){
+    if(!it.dead && it.y > g.H-66 && it.y < g.H-18 && Math.abs(it.x-g.px) < 38){
+      it.dead = true;
+      if(it.type==="e"){ g.score += 10; g.lastE = t; pop(g, it.x, it.y, "+10", "#cf0061"); }
+      else if(it.type==="t"){
+        let pts = 25;
+        if(g.lastE && t-g.lastE < 2500){ pts += 15; pop(g, it.x, it.y-24, "CROSS-SELL +15!", "#d8a200"); }
+        g.score += pts; pop(g, it.x, it.y, "+25", "#b8860b");
+      }
+      else { g.lives--; pop(g, it.x, it.y, "−1 ❤️", "#c0392b"); if(g.lives<=0){ endGame(); } }
+    }
+  }
+  g.items = g.items.filter(it=>!it.dead && it.y < g.H+34);
+  g.pops.forEach(p=>{ p.y -= dt*0.05; p.life -= dt; });
+  g.pops = g.pops.filter(p=>p.life>0);
+
+  drawGame(g);
+  updateGameHud();
+  if(g.run) requestAnimationFrame(gameLoop);
+}
+
+function drawGame(g){
+  const {ctx,W,H} = g;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle = "rgba(124,179,66,.35)"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0,H-16); ctx.lineTo(W,H-16); ctx.stroke();
+
+  for(const it of g.items){
+    if(it.type==="t"){
+      if(telImg && telImg.complete) ctx.drawImage(telImg, it.x-19, it.y-19, 38, 38);
+      else { ctx.font = "26px serif"; ctx.textAlign="center"; ctx.fillText("📺", it.x, it.y+9); }
+    }else if(it.type==="e"){
+      ctx.beginPath(); ctx.arc(it.x, it.y, 16, 0, 7);
+      ctx.fillStyle = "#cf0061"; ctx.fill();
+      ctx.font = "16px serif"; ctx.textAlign = "center"; ctx.fillText("⚡", it.x, it.y+6);
+    }else{
+      ctx.font = "26px serif"; ctx.textAlign = "center";
+      ctx.fillText(it.type==="d" ? "🚪" : "❌", it.x, it.y+9);
+    }
+  }
+
+  // de verkoper
+  const px = g.px, py = H-16;
+  ctx.fillStyle = "#558b2f";
+  ctx.beginPath(); ctx.roundRect(px-15, py-32, 30, 28, 8); ctx.fill();   // lijf
+  ctx.fillStyle = "#f5c9a0";
+  ctx.beginPath(); ctx.arc(px, py-40, 10, 0, 7); ctx.fill();             // hoofd
+  ctx.fillStyle = "#1a1f1a";
+  ctx.beginPath(); ctx.arc(px-3.5, py-42, 1.6, 0, 7); ctx.arc(px+3.5, py-42, 1.6, 0, 7); ctx.fill(); // ogen
+  ctx.fillStyle = "#ffc20e";
+  ctx.beginPath(); ctx.roundRect(px-2.5, py-30, 5, 13, 2); ctx.fill();   // telenet-das
+  ctx.strokeStyle = "#1a1f1a"; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(px, py-38.5, 4.5, .25*Math.PI, .75*Math.PI); ctx.stroke(); // glimlach
+
+  for(const p of g.pops){
+    ctx.globalAlpha = Math.min(1, p.life/600);
+    ctx.font = "bold 14px 'JetBrains Mono',monospace"; ctx.textAlign = "center";
+    ctx.fillStyle = p.c; ctx.fillText(p.txt, p.x, p.y);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function updateGameHud(){
+  const s = document.getElementById("gScore"), l = document.getElementById("gLives");
+  if(s && G){ s.textContent = G.score; l.textContent = G.lives; }
+}
+
+function endGame(){
+  const g = G; g.run = false;
+  const hs = Math.max(g.score, +(localStorage.getItem("tc-game-hs")||0));
+  localStorage.setItem("tc-game-hs", hs);
+  const h = document.getElementById("gHigh"); if(h) h.textContent = hs;
+  const ov = document.getElementById("gameOv");
+  ov.innerHTML = `<h3>${g.score >= hs && g.score>0 ? "🏆 Nieuw record!" : "Game over!"}</h3>
+    <div class="sub">${g.score} punten · record ${hs}</div>
+    <button class="btn" onclick="startGame()">↻ Speel opnieuw</button>`;
+  ov.classList.remove("hide");
+}
 
 /* ---------- filters ---------- */
 function setGran(g){ chartGran = g; render(); }
