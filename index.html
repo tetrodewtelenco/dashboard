@@ -137,6 +137,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--ink);font-size:14px;
 .chip:hover{border-color:var(--green);transform:translateY(-1px)}
 .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink);transform:scale(1.04)}
 .filters select{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--chip-bg);font-family:var(--fb);font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.filters .fdate{padding:7px 9px;border-radius:10px;border:1px solid var(--line);background:var(--chip-bg);font-family:var(--fb);font-size:12px;font-weight:600;color:var(--ink-2)}
 .filters .spacer{flex:1}
 
 /* ===== sections / reveal ===== */
@@ -419,9 +420,29 @@ tr:nth-child(3) td .rank{background:#e8c39e;color:#6d4c1f}
       <button class="chip" onclick="setRecapQuick('today')">Vandaag</button>
       <button class="chip" onclick="setRecapQuick('yesterday')">Gisteren</button>
       <input type="date" id="recapDate" onchange="renderRecap()">
+      <div class="gran" style="margin-left:auto">
+        <button id="rpText" class="on" onclick="setRecapPane('text')">💬 Tekst</button>
+        <button id="rpImg" onclick="setRecapPane('img')">🖼️ Afbeelding</button>
+      </div>
     </div>
-    <pre class="recap-text" id="recapText"></pre>
-    <button class="btn" style="width:100%;justify-content:center" onclick="copyRecap()">📋 Kopieer voor WhatsApp</button>
+    <div id="recapTextPane">
+      <pre class="recap-text" id="recapText"></pre>
+      <button class="btn" style="width:100%;justify-content:center" onclick="copyRecap()">📋 Kopieer voor WhatsApp</button>
+    </div>
+    <div id="recapImgPane" style="display:none">
+      <div class="recap-tools">
+        <span class="tool-label">Periode</span>
+        <div class="gran">
+          <button id="rgDag" class="on" onclick="setRecapImgGran('dag')">Dag</button>
+          <button id="rgWeek" onclick="setRecapImgGran('week')">Week</button>
+        </div>
+      </div>
+      <img id="recapImg" alt="Recap afbeelding" style="width:100%;border-radius:14px;display:block;margin-bottom:12px;box-shadow:var(--shadow)">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" style="flex:1;justify-content:center" onclick="downloadRecapImg()">⬇️ Download PNG</button>
+        <button class="btn" style="flex:1;justify-content:center;background:var(--green-deep)" onclick="copyRecapImg()">📋 Kopieer afbeelding</button>
+      </div>
+    </div>
     <div class="recap-copied" id="recapCopied"></div>
   </div>
 </div>
@@ -499,6 +520,8 @@ const DEFAULT_YEAR = new Date().getFullYear();
 
 let allRows = [];
 let filterMonth = "all";
+let filterFrom = "";
+let filterTo = "";
 let filterSales = "all";
 let filterPlanner = "all";
 let charts = {};
@@ -619,7 +642,7 @@ function parseOmzet(s){
 }
 
 function normName(s){
-  s = (s||"").trim().toLowerCase();
+  s = (s||"").trim().toLowerCase().replace(/[^a-zà-ÿ]+$/,"");
   return s.replace(/(^|[\s-])\S/g, c => c.toUpperCase());
 }
 
@@ -685,6 +708,7 @@ function ingestCSV(text){
     const header = grid[0].map(h => h.trim().toUpperCase());
     const idx = {
       planner: 0,
+      ingepland: header.findIndex(h => h.includes("INGEPLAND")),
       klant: header.findIndex(h => h.includes("KLANT")),
       datum: header.findIndex(h => h.includes("DATUM")),
       sales: header.findIndex(h => h === "SALES"),
@@ -700,6 +724,7 @@ function ingestCSV(text){
         const date = parseDate(r[idx.datum]);
         return {
           planner: normName(r[idx.planner]),
+          booked: parseDate(r[idx.ingepland]),
           klant: (r[idx.klant]||"").trim(),
           date,
           monthKey: date ? date.getFullYear() + "-" + date.getMonth() : null,
@@ -734,11 +759,25 @@ function weekLabel(k){
 }
 
 function getFiltered(){
-  return allRows.filter(r =>
-    (filterMonth === "all" || r.monthKey === filterMonth) &&
-    (filterSales === "all" || r.sales === filterSales) &&
-    (filterPlanner === "all" || r.planner === filterPlanner)
-  );
+  const from = filterFrom ? new Date(filterFrom + "T00:00:00") : null;
+  const to = filterTo ? new Date(filterTo + "T23:59:59") : null;
+  return allRows.filter(r=>{
+    if(filterSales !== "all" && r.sales !== filterSales) return false;
+    if(filterPlanner !== "all" && r.planner !== filterPlanner) return false;
+    if(from || to){
+      if(!r.date) return false;
+      if(from && r.date < from) return false;
+      if(to && r.date > to) return false;
+      return true;
+    }
+    if(filterMonth === "all") return true;
+    if(filterMonth.includes("q")){
+      if(!r.date) return false;
+      const [y,q] = filterMonth.split("-q");
+      return r.date.getFullYear() === +y && Math.floor(r.date.getMonth()/3) === +q;
+    }
+    return r.monthKey === filterMonth;
+  });
 }
 
 /* ---------- count-up animatie ---------- */
@@ -816,11 +855,19 @@ function render(){
 
   const monthKeys = [...new Set(allRows.filter(r=>r.monthKey).map(r=>r.monthKey))]
     .sort((a,b)=>{const [ya,ma]=a.split("-").map(Number),[yb,mb]=b.split("-").map(Number);return ya-yb||ma-mb;});
-  const chips = ['<button class="chip'+(filterMonth==="all"?" on":"")+'" onclick="setMonth(\'all\')">Alles</button>']
+  const quarterKeys = [...new Set(monthKeys.map(k=>{const [y,m]=k.split("-").map(Number);return y+"-q"+Math.floor(m/3);}))];
+  const rangeActive = !!(filterFrom || filterTo);
+  const chipOn = k => !rangeActive && filterMonth===k ? " on" : "";
+  const chips = ['<button class="chip'+chipOn("all")+'" onclick="setMonth(\'all\')">Alles</button>']
     .concat(monthKeys.map(k=>{
       const [y,m]=k.split("-").map(Number);
       const lbl = MONTH_NL[m].charAt(0).toUpperCase()+MONTH_NL[m].slice(1)+(y!==DEFAULT_YEAR?" "+y:"");
-      return '<button class="chip'+(filterMonth===k?" on":"")+'" onclick="setMonth(\''+k+'\')">'+lbl+'</button>';
+      return '<button class="chip'+chipOn(k)+'" onclick="setMonth(\''+k+'\')">'+lbl+'</button>';
+    }))
+    .concat(quarterKeys.map(k=>{
+      const [y,q]=k.split("-q").map(Number);
+      const lbl = "Q"+(q+1)+(y!==DEFAULT_YEAR?" "+y:"");
+      return '<button class="chip'+chipOn(k)+'" onclick="setMonth(\''+k+'\')">'+lbl+'</button>';
     })).join("");
 
   const salesList = [...new Set(allRows.map(r=>r.sales).filter(Boolean))].sort();
@@ -840,6 +887,11 @@ function render(){
   <div class="filters">
     <div class="chips">${chips}</div>
     <div class="spacer"></div>
+    <span class="tool-label">Van</span>
+    <input type="date" class="fdate" value="${filterFrom}" onchange="setFrom(this.value)">
+    <span class="tool-label">tot</span>
+    <input type="date" class="fdate" value="${filterTo}" onchange="setTo(this.value)">
+    ${(filterFrom||filterTo) ? '<button class="chip on" onclick="clearRange()">✕ periode</button>' : ''}
     <select onchange="setSales(this.value)">
       <option value="all">Alle verkopers</option>
       ${salesList.map(s=>`<option value="${s}" ${filterSales===s?"selected":""}>${s}</option>`).join("")}
@@ -1799,6 +1851,182 @@ function renderRecap(){
   const v = document.getElementById("recapDate").value;
   document.getElementById("recapText").textContent = v ? buildRecap(new Date(v+"T12:00:00")) : "Kies een datum.";
   document.getElementById("recapCopied").textContent = "";
+  if(recapPane === "img") renderRecapImg();
+}
+
+/* ---------- recap-afbeelding ---------- */
+let recapPane = "text", recapImgGran = "dag", lastRecapCanvas = null;
+const WD_NL = ["ZONDAG","MAANDAG","DINSDAG","WOENSDAG","DONDERDAG","VRIJDAG","ZATERDAG"];
+const mondayOf = d => { const t = new Date(d); t.setDate(t.getDate()-((t.getDay()+6)%7)); t.setHours(0,0,0,0); return t; };
+
+function setRecapPane(p){
+  recapPane = p;
+  document.getElementById("recapTextPane").style.display = p==="text" ? "" : "none";
+  document.getElementById("recapImgPane").style.display = p==="img" ? "" : "none";
+  document.getElementById("rpText").classList.toggle("on", p==="text");
+  document.getElementById("rpImg").classList.toggle("on", p==="img");
+  document.getElementById("recapCopied").textContent = "";
+  if(p==="img") renderRecapImg();
+}
+function setRecapImgGran(g){
+  recapImgGran = g;
+  document.getElementById("rgDag").classList.toggle("on", g==="dag");
+  document.getElementById("rgWeek").classList.toggle("on", g==="week");
+  renderRecapImg();
+}
+function renderRecapImg(){
+  const v = document.getElementById("recapDate").value;
+  if(!v) return;
+  lastRecapCanvas = drawRecapImage(new Date(v+"T12:00:00"), recapImgGran);
+  document.getElementById("recapImg").src = lastRecapCanvas.toDataURL("image/png");
+}
+
+function drawRecapImage(d, gran){
+  let from = new Date(d); from.setHours(0,0,0,0);
+  let to = new Date(d); to.setHours(23,59,59,999);
+  if(gran==="week"){ from = mondayOf(d); to = new Date(from); to.setDate(to.getDate()+6); to.setHours(23,59,59,999); }
+  const inWin = dt => dt && dt >= from && dt <= to;
+  const booked = allRows.filter(r=>inWin(r.booked));
+  const byP = {};
+  booked.forEach(r=>{ if(r.planner) byP[r.planner]=(byP[r.planner]||0)+1; });
+  const planners = Object.entries(byP).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const day = allRows.filter(r=>inWin(r.date));
+  const doorg = day.filter(r=>["GO","NO GO","PENDING"].includes(r.status)).length;
+  const tel = day.filter(r=>r.telenetGo).length;
+  const combo = day.filter(r=>r.telenetGo && r.energieGo).length;
+  const omzet = day.reduce((s,r)=>s+r.omzet,0);
+  const energie = day.filter(r=>r.energieGo).length;
+  const isToday = sameDay(d, new Date());
+  const dateLbl = gran==="week"
+    ? "WEEK " + from.getDate() + "–" + to.getDate() + " " + MONTH_NL[to.getMonth()].toUpperCase()
+    : WD_NL[d.getDay()] + " " + d.getDate() + " " + MONTH_NL[d.getMonth()].toUpperCase();
+
+  const W = 720, S = 2;
+  const headerH=86, tabH=80, bigH=210, pHead=48, rowH=58, pGap=16, sHead=54, cardH=148, foot=46;
+  const plannerBlok = planners.length ? planners.length*rowH : 54;
+  const H = headerH+tabH+bigH+pHead+plannerBlok+pGap+sHead+cardH+foot;
+  const cv = document.createElement("canvas");
+  cv.width = W*S; cv.height = H*S;
+  const x = cv.getContext("2d");
+  x.scale(S,S);
+  const rr = (px,py,w,h,r)=>{ x.beginPath(); x.roundRect(px,py,w,h,r); };
+
+  const bg = x.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,"#1a1326"); bg.addColorStop(1,"#0b0812");
+  x.fillStyle = bg; x.fillRect(0,0,W,H);
+  x.textBaseline = "middle";
+
+  // header
+  x.font = "800 26px 'Bricolage Grotesque',Inter,sans-serif";
+  x.fillStyle = "#ffffff"; x.textAlign = "left";
+  x.fillText("TEL & CO", 30, 46);
+  x.font = "22px serif"; x.fillText("⚡", 162, 45);
+  x.font = "700 14px 'JetBrains Mono',monospace"; x.fillStyle = "#8d87a0"; x.textAlign = "right";
+  x.fillText(dateLbl, W-30, 47);
+
+  // tabs
+  const ty = headerH, tw = (W-60)/2;
+  rr(30,ty,W-60,54,15); x.fillStyle = "rgba(255,255,255,.06)"; x.fill();
+  const actX = gran==="week" ? 30+tw : 30;
+  const tg = x.createLinearGradient(actX,0,actX+tw,0);
+  tg.addColorStop(0,"#e6007e"); tg.addColorStop(1,"#8a2be2");
+  rr(actX,ty,tw,54,15); x.fillStyle = tg; x.fill();
+  x.font = "800 15px Inter,sans-serif"; x.textAlign = "center";
+  x.fillStyle = gran==="week" ? "#9a93ab" : "#ffffff";
+  x.fillText(gran!=="week" && isToday ? "VANDAAG" : "DAG", 30+tw/2, ty+28);
+  x.fillStyle = gran==="week" ? "#ffffff" : "#9a93ab";
+  x.fillText("DEZE WEEK", 30+tw+tw/2, ty+28);
+
+  // groot cijfer
+  const by0 = headerH+tabH;
+  const ng = x.createLinearGradient(0,by0+25,0,by0+135);
+  ng.addColorStop(0,"#ffe14d"); ng.addColorStop(1,"#ff9d2e");
+  x.font = "800 112px 'Bricolage Grotesque',Inter,sans-serif";
+  x.fillStyle = ng; x.textAlign = "center";
+  x.fillText(String(booked.length), W/2, by0+92);
+  x.font = "800 16px Inter,sans-serif"; x.fillStyle = "#cfc9dd";
+  x.fillText(gran==="week" ? "AFSPRAKEN DEZE WEEK INGEPLAND" : (isToday ? "AFSPRAKEN VANDAAG INGEPLAND" : "AFSPRAKEN INGEPLAND"), W/2, by0+170);
+
+  // planners
+  let y = by0+bigH;
+  x.font = "700 13px 'JetBrains Mono',monospace"; x.fillStyle = "#8d87a0"; x.textAlign = "left";
+  x.fillText("📞  PLANNERS", 30, y+24);
+  y += pHead;
+  const meds = ["🥇","🥈","🥉"];
+  if(!planners.length){
+    x.fillStyle = "#6f6885"; x.font = "600 14px Inter,sans-serif";
+    x.fillText("Geen inplanningen in deze periode", 30, y+22);
+    y += 54;
+  }
+  planners.forEach(([n,cnt],i)=>{
+    rr(30,y,W-60,rowH-12,13); x.fillStyle = "rgba(255,255,255,.055)"; x.fill();
+    x.strokeStyle = "rgba(255,255,255,.08)"; x.lineWidth = 1; x.stroke();
+    const cy = y+(rowH-12)/2;
+    x.textAlign = "left";
+    if(i<3){ x.font = "24px serif"; x.fillText(meds[i], 44, cy+1); }
+    else{
+      rr(46,cy-11,22,22,6); x.fillStyle = "rgba(255,255,255,.12)"; x.fill();
+      x.font = "700 12px Inter,sans-serif"; x.fillStyle = "#b9b3c9"; x.textAlign = "center";
+      x.fillText(String(i+1), 57, cy+1); x.textAlign = "left";
+    }
+    x.font = "700 17px Inter,sans-serif"; x.fillStyle = "#ffffff";
+    x.fillText(n, 86, cy+1);
+    x.textAlign = "right";
+    x.font = "800 17px Inter,sans-serif"; x.fillStyle = "#ffffff";
+    x.fillText(String(cnt), W-92, cy+1);
+    x.font = "600 12px Inter,sans-serif"; x.fillStyle = "#8d87a0";
+    x.fillText("afspr", W-46, cy+2);
+    y += rowH;
+  });
+  y += pGap;
+
+  // sales
+  x.textAlign = "left"; x.font = "700 13px 'JetBrains Mono',monospace"; x.fillStyle = "#8d87a0";
+  x.fillText("🏆  SALES — AFSPRAKEN DIE " + (gran==="week" ? "DEZE WEEK" : (isToday ? "VANDAAG" : "DIE DAG")) + " PLAATSVONDEN", 30, y+26);
+  y += sHead;
+  const cw = (W-60-24)/3;
+  const cards = [
+    {v:String(doorg), l:"DOORGEGAAN", s:"van "+day.length, c:"#ffffff"},
+    {v:String(tel), l:"📺 TELENET", s:combo+" ⚡ combo", c:"#ffd54f"},
+    {v:"€"+Math.round(omzet).toLocaleString("nl-BE"), l:"OMZET", s:energie+" ⚡ energie", c:"#ff9d2e"}
+  ];
+  cards.forEach((cd,i)=>{
+    const cx = 30+i*(cw+12);
+    rr(cx,y,cw,cardH-22,15); x.fillStyle = "rgba(255,255,255,.055)"; x.fill();
+    x.strokeStyle = "rgba(255,255,255,.08)"; x.stroke();
+    x.textAlign = "center";
+    x.font = "800 " + (cd.v.length>6 ? 26 : 32) + "px 'Bricolage Grotesque',Inter,sans-serif";
+    x.fillStyle = cd.c; x.fillText(cd.v, cx+cw/2, y+44);
+    x.font = "700 12.5px Inter,sans-serif"; x.fillStyle = "#cfc9dd"; x.fillText(cd.l, cx+cw/2, y+80);
+    x.font = "600 12px Inter,sans-serif"; x.fillStyle = "#8d87a0"; x.fillText(cd.s, cx+cw/2, y+102);
+  });
+  y += cardH;
+
+  x.font = "600 11px Inter,sans-serif"; x.fillStyle = "#6f6885"; x.textAlign = "center";
+  x.fillText("Tel&Co Energy · live dashboard recap", W/2, y+10);
+  return cv;
+}
+
+function downloadRecapImg(){
+  if(!lastRecapCanvas) renderRecapImg();
+  if(!lastRecapCanvas) return;
+  const v = document.getElementById("recapDate").value;
+  const a = document.createElement("a");
+  a.download = "telco-recap-" + v + (recapImgGran==="week" ? "-week" : "") + ".png";
+  a.href = lastRecapCanvas.toDataURL("image/png");
+  a.click();
+  document.getElementById("recapCopied").textContent = "✓ Afbeelding gedownload!";
+}
+async function copyRecapImg(){
+  if(!lastRecapCanvas) renderRecapImg();
+  if(!lastRecapCanvas) return;
+  try{
+    const blob = await new Promise(res=>lastRecapCanvas.toBlob(res, "image/png"));
+    await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
+    document.getElementById("recapCopied").textContent = "✓ Afbeelding gekopieerd — plak in WhatsApp of je meeting-slides!";
+  }catch(e){
+    document.getElementById("recapCopied").textContent = "Kopiëren lukt niet in deze browser — gebruik ⬇️ Download PNG.";
+  }
 }
 async function copyRecap(){
   const t = document.getElementById("recapText").textContent;
@@ -1818,7 +2046,10 @@ window.addEventListener("keydown", e=>{ if(e.key==="Escape") closeRecap(); });
 function setGran(g){ chartGran = g; render(); }
 function setSortSales(v){ sortSales = v; render(); }
 function setMinFive(v){ minFive = v; render(); }
-function setMonth(k){ filterMonth = k; render(); }
+function setMonth(k){ filterMonth = k; filterFrom = ""; filterTo = ""; render(); }
+function setFrom(v){ filterFrom = v; render(); }
+function setTo(v){ filterTo = v; render(); }
+function clearRange(){ filterFrom = ""; filterTo = ""; render(); }
 function setSales(v){ filterSales = v; render(); }
 function setPlanner(v){ filterPlanner = v; render(); }
 
